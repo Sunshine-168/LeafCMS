@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>安装 CMS</title>
-    <link rel="stylesheet" href="{{ asset('css/install.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/css/install.css') }}?v=2">
 </head>
 <body>
 <div class="wrap">

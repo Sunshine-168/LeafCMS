@@ -48,6 +48,9 @@ class ThemeAppearance
         if (str_starts_with($path, '/storage/') || str_starts_with($path, 'storage/')) {
             return cms_media('/'.ltrim($path, '/'));
         }
+        if (str_starts_with($path, '/')) {
+            return cms_media($path);
+        }
 
         return cms_media(Storage::disk('public')->url($path));
     }

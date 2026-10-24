@@ -2,7 +2,7 @@
 
 Laravel 13 建站 CMS：栏目、动态模型、推荐位、多站、会员、采集、静态化。前台只用 Blade **`@cms*`** 标签，不依赖 Filament，没有应用市场。
 
-MIT 许可。二次开发按 Laravel 常规做（Service / Event / 主题目录），**不会**做在线升级、OAuth、支付，也不会引入第二套模板标签。见 [CONTRIBUTING](CONTRIBUTING.md)、[SECURITY](SECURITY.md)。内容保存、评论、表单、换主题会发出 `App\Events\*`，不必改核心文件。
+MIT 许可。二次开发按 Laravel 常规做（Service / Event / 主题目录），**不会**做在线升级、OAuth、支付，也不会引入第二套模板标签。见 [CONTRIBUTING](CONTRIBUTING.md)、[SECURITY](SECURITY.md)。每次更新记在 [CHANGELOG](CHANGELOG.md)。内容保存、评论、表单、换主题会发出 `App\Events\*`，不必改核心文件。
 
 ## 安装
 
@@ -175,7 +175,7 @@ resources/views/themes/{enterprise,mobile,download,nav,source,blog,manga,sports}
 - **定时发布**：`published_at` 未到点时前台 `/e/{id}`、下载、外链跳转均为 404；后台列表显示「定时」
 - **会员投稿**：模型勾选「允许会员投稿」+ 分组权限 `contribute`；会员保存草稿或提交待审，可填写该模型扩展字段；后台内容列表可筛待审并发布
 - **编辑审核**：角色权限 `publish`（超管默认有，编辑角色无）。无此权限不能发布，也不能把已发布改回草稿/待审
-- **CDN**：站点设置 `cdn_url`（如 `https://cdn.example.com`）后，正文 HTML、`cms_media()`、API 附件里的 `/storage` 与本站 APP_URL 前缀会改写到该域名；后台 `asset()` 静态资源（如 `css/admin.css`）不走 CDN
+- **CDN**：站点设置 `cdn_url`（如 `https://cdn.example.com`）后，正文 HTML、`cms_media()`、API 附件里的 `/storage` 与本站 APP_URL 前缀会改写到该域名；后台 `asset()` 静态资源（如 `assets/css/admin.css`）不走 CDN
 - **对象存储**：上传默认 `public` 盘。阿里云 OSS / 腾讯云 COS / S3 设 `CMS_MEDIA_DISK=s3` 并 `composer require league/flysystem-aws-s3-v3`，环境变量见后台「说明 → 环境」
 - **整站备份**：站点设置「更多」或 `php artisan cms:backup`；后台可还原，或 `php artisan cms:backup --restore=cms-backup-YYYYMMDD-HHMMSS.zip`。zip 含 `database.sql`（CREATE TABLE + INSERT，sqlite 另附库文件）+ `uploads/`，不含 `.env`，保留最近 5 份。还原按当前表结构写入数据，不能用来升级/降级数据库结构
 - **站点地图**：后台「运营 → 更多 → 地图」可勾栏目 / 文章 / 标签、限制文章条数、加补充地址。会员门槛文档不列入。XML `/sitemap.xml`（含 lastmod / changefreq / priority），网页版 `/sitemap`。`robots.txt` 列出各语言 Sitemap（如 `/en/sitemap.xml`）

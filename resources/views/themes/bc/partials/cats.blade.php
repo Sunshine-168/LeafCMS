@@ -11,7 +11,7 @@
 <div class="ig-mosaic">
     @foreach($tiles as [$file, $label])
         <a class="ig-cat" href="{{ $apiUrl }}">
-            <img src="{{ asset('themes/bc/'.$file) }}" alt="{{ $label }}">
+            <img src="{{ asset('assets/themes/bc/'.$file) }}" alt="{{ $label }}">
             <span>{{ $label }}</span>
         </a>
     @endforeach

@@ -21,6 +21,8 @@
 /public/html/*
 !/public/html/.gitignore
 /storage/*.key
+/storage/framework/tmp_retest.php
+/tests
 /storage/pail
 /storage/framework/sessions/*
 !/storage/framework/sessions/.gitignore

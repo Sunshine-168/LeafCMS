@@ -14,7 +14,7 @@
         </div>
 
         @if($skin['layout'] === 'odds')
-            <div class="skin-banner" style="--shot:url('{{ asset('themes/bc/'.$skin['img']) }}')">
+            <div class="skin-banner" style="--shot:url('{{ asset('assets/themes/bc/'.$skin['img']) }}')">
                 <small>{{ $skin['board'][0]['league'] ?? '' }} · {{ $skin['kind_label'] }}</small>
                 <strong>{{ ($skin['board'][0]['home'] ?? '') }} <i>vs</i> {{ ($skin['board'][0]['away'] ?? '') }}</strong>
             </div>
@@ -42,7 +42,7 @@
             </div>
         @elseif($skin['layout'] === 'lobby')
             <div class="skin-lobby">
-                <div class="skin-feature" style="--shot:url('{{ asset('themes/bc/'.$skin['img']) }}')">
+                <div class="skin-feature" style="--shot:url('{{ asset('assets/themes/bc/'.$skin['img']) }}')">
                     <small><i class="skin-live"></i> LIVE</small>
                     <strong>{{ $skin['tables'][0]['name'] ?? $skin['name'] }}</strong>
                     <span>{{ cms_t('限红', 'Limit') }} {{ $skin['tables'][0]['limit'] ?? '' }}</span>
@@ -65,7 +65,7 @@
                     @endforeach
                 </div>
                 <div>
-                    <div class="skin-banner is-short" style="--shot:url('{{ asset('themes/bc/'.$skin['img']) }}')">
+                    <div class="skin-banner is-short" style="--shot:url('{{ asset('assets/themes/bc/'.$skin['img']) }}')">
                         <small>{{ $skin['board'][0]['league'] ?? '' }}</small>
                         <strong>{{ $skin['board'][0]['home'] ?? '' }} <i>vs</i> {{ $skin['board'][0]['away'] ?? '' }}</strong>
                     </div>
@@ -84,7 +84,7 @@
                 </div>
             </div>
         @elseif($skin['layout'] === 'tables')
-            <div class="skin-tables" style="--shot:url('{{ asset('themes/bc/'.$skin['img']) }}')">
+            <div class="skin-tables" style="--shot:url('{{ asset('assets/themes/bc/'.$skin['img']) }}')">
                 @foreach($skin['tables'] ?? [] as $table)
                     <div>
                         <small><i class="skin-live"></i> LIVE</small>
@@ -96,7 +96,7 @@
         @elseif($skin['layout'] === 'hall')
             <div class="skin-hall">
                 @foreach($skin['doors'] ?? [] as $door)
-                    <div style="--shot:url('{{ asset('themes/bc/'.$door['img']) }}')">
+                    <div style="--shot:url('{{ asset('assets/themes/bc/'.$door['img']) }}')">
                         <strong>{{ $door['name'] }}</strong>
                         <span>{{ $door['meta'] }}</span>
                     </div>
@@ -104,7 +104,7 @@
             </div>
         @elseif($skin['layout'] === 'rail')
             <div class="skin-jackpot"><small>{{ cms_t('奖池', 'Jackpot') }}</small><strong>{{ $skin['jackpot'] ?? '' }}</strong></div>
-            <div class="skin-rail" style="--shot:url('{{ asset('themes/bc/'.$skin['img']) }}')">
+            <div class="skin-rail" style="--shot:url('{{ asset('assets/themes/bc/'.$skin['img']) }}')">
                 @foreach($skin['games'] ?? [] as $game)
                     <i><b>{{ $game }}</b></i>
                 @endforeach
@@ -134,11 +134,11 @@
                 </div>
             </div>
         @else
-            <div class="skin-banner is-short" style="--shot:url('{{ asset('themes/bc/'.$skin['img']) }}')">
+            <div class="skin-banner is-short" style="--shot:url('{{ asset('assets/themes/bc/'.$skin['img']) }}')">
                 <small>{{ $skin['kind_label'] }}</small>
                 <strong>{{ $skin['name'] }}</strong>
             </div>
-            <div class="skin-tiles" style="--shot:url('{{ asset('themes/bc/'.$skin['img']) }}')">
+            <div class="skin-tiles" style="--shot:url('{{ asset('assets/themes/bc/'.$skin['img']) }}')">
                 @foreach($skin['games'] ?? [] as $game)
                     <i><b>{{ $game }}</b><small>{{ 800 + ($loop->index * 137) }} {{ cms_t('在玩', 'playing') }}</small></i>
                 @endforeach

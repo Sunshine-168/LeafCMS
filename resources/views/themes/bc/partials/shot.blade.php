@@ -6,5 +6,5 @@
     ][$slug ?? ''] ?? '';
 @endphp
 @if($file !== '')
-    <img src="{{ asset('themes/bc/'.$file) }}" alt="{{ $alt ?? '' }}">
+    <img src="{{ asset('assets/themes/bc/'.$file) }}" alt="{{ $alt ?? '' }}">
 @endif

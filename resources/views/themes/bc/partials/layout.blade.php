@@ -17,7 +17,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="{{ asset('themes/bc/favicon.png') }}" type="image/png">
+    <link rel="icon" href="{{ asset('assets/themes/bc/favicon.png') }}" type="image/png">
     @cmsSeo
     @include('cms.partials.front-appearance')
     @include('themes.bc.partials.styles')
@@ -26,7 +26,7 @@
 <header class="ig-top">
     <div class="ig-wrap ig-bar">
         <a class="ig-brand" href="{{ cms_front_url() }}">
-            <img class="ig-logo" src="{{ !empty($site['logo_url']) ? $site['logo_url'] : asset('themes/bc/logo.png') }}" alt="{{ cms_t($site['title'] ?? 'IG包网', 'IG') }}">
+            <img class="ig-logo" src="{{ !empty($site['logo_url']) ? $site['logo_url'] : asset('assets/themes/bc/logo.png') }}" alt="{{ cms_t($site['title'] ?? 'IG包网', 'IG') }}">
         </a>
         <button class="ig-nav-btn" type="button" aria-expanded="false">{{ cms_t('菜单', 'Menu') }}</button>
         @if($telegram !== '')
@@ -61,7 +61,7 @@
 <footer class="ig-foot">
     <div class="ig-wrap ig-foot-grid">
         <div class="ig-foot-brand">
-            <a class="ig-brand" href="{{ cms_front_url() }}"><img class="ig-logo" src="{{ asset('themes/bc/logo.png') }}" alt="{{ cms_t($site['title'] ?? 'IG包网', 'IG') }}"></a>
+            <a class="ig-brand" href="{{ cms_front_url() }}"><img class="ig-logo" src="{{ asset('assets/themes/bc/logo.png') }}" alt="{{ cms_t($site['title'] ?? 'IG包网', 'IG') }}"></a>
             <p>{{ cms_t('九套前台模板，同一套后台、代理台和游戏接口。', 'Nine templates. One admin, one agent desk, and one game API.') }}</p>
             @if($telegram !== '')
                 <a class="ig-tg" href="{{ $telegram }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.4 2.7 11.2c-1.3.5-1.2 1.2-.2 1.5l4.8 1.5 1.9 5.8c.2.7.1.9.8.9.5 0 .7-.2 1-.5l2.7-2.6 4.8 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.2-.4-1.7-1.4-1.3z"/></svg><span>{{ $telegramHandle }}</span></a>

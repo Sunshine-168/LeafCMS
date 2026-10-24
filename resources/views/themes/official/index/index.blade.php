@@ -83,7 +83,7 @@
             </div>
             <div class="shots">
                 <a class="shot" href="https://applecms.top/" target="_blank" rel="noopener">
-                    <img src="{{ asset('brand/cases/applecms.png') }}" alt="苹果CMS 官网首页" width="1440" height="900">
+                    <img src="{{ asset('assets/brand/cases/applecms.png') }}" alt="苹果CMS 官网首页" width="1440" height="900">
                     <div class="shot-meta">
                         <h3>苹果CMS</h3>
                         <p>开源影视站。采集、播放、会员和插件都在这个站上。</p>
@@ -91,7 +91,7 @@
                     </div>
                 </a>
                 <a class="shot" href="https://xunqitong.im/" target="_blank" rel="noopener">
-                    <img src="{{ asset('brand/cases/xunqitong.png') }}" alt="讯企通官网首页" width="1440" height="900">
+                    <img src="{{ asset('assets/brand/cases/xunqitong.png') }}" alt="讯企通官网首页" width="1440" height="900">
                     <div class="shot-meta">
                         <h3>讯企通</h3>
                         <p>企业即时通讯。手机、桌面和后台在同一个官网里展示。</p>

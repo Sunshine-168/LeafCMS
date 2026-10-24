@@ -12,14 +12,14 @@
     <title>@yield('title', cms_t('LeafCMS 官网', 'LeafCMS'))</title>
     <meta name="description" content="@yield('description', cms_t('LeafCMS 是可商用的开源建站系统，用来做企业官网、博客和多站点。', 'LeafCMS is an open-source, commercial-use site builder for company sites, blogs, and multiple sites.'))">
     <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="32x32">
-    <link rel="icon" href="{{ asset('brand/logo.svg') }}" type="image/svg+xml">
-    <link rel="stylesheet" href="{{ asset('brand/site.css') }}?v=23">
+    <link rel="icon" href="{{ asset('assets/brand/logo.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ asset('assets/brand/site.css') }}?v=23">
 </head>
 <body>
 <header class="top">
     <div class="wrap top-inner">
         <a class="brand" href="{{ cms_route('home') }}">
-            <img class="mark" src="{{ asset('brand/logo.svg') }}" alt="" width="32" height="32">
+            <img class="mark" src="{{ asset('assets/brand/logo.svg') }}" alt="" width="32" height="32">
             LeafCMS
         </a>
         <nav class="nav">
@@ -55,7 +55,7 @@
     <div class="wrap">
         <div class="foot-grid">
             <div class="foot-brand">
-                <a class="brand" href="{{ cms_route('home') }}"><img class="mark" src="{{ asset('brand/logo.svg') }}" alt="" width="32" height="32"> LeafCMS</a>
+                <a class="brand" href="{{ cms_route('home') }}"><img class="mark" src="{{ asset('assets/brand/logo.svg') }}" alt="" width="32" height="32"> LeafCMS</a>
                 <p>{{ cms_t('开源建站系统。企业官网、博客、下载站和多站点用同一套后台，前台用标签取内容。', 'Open-source site builder. Company sites, blogs, downloads, and multiple sites share one admin. Themes pull content with tags.') }}</p>
             </div>
             <div>
@@ -94,6 +94,6 @@
         <span>@sanpang</span>
     </a>
 </div>
-<script src="{{ asset('brand/site.js') }}"></script>
+<script src="{{ asset('assets/brand/site.js') }}"></script>
 </body>
 </html>
