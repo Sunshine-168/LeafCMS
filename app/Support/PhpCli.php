@@ -29,7 +29,7 @@ class PhpCli
 
                 continue;
             }
-            if (is_file($path)) {
+            if (self::allowedPath($path) && is_file($path)) {
                 return $path;
             }
             if ($picked === '' && ! self::isWorker($path)) {
@@ -45,17 +45,23 @@ class PhpCli
         return '* * * * * '.self::quote(self::binary()).' '.self::quote(base_path('artisan')).' schedule:run >> /dev/null 2>&1';
     }
 
-    /** 宝塔脚本框里的那一行。本机不是 Linux 路径时给出面板上的示例，避免把 php.exe 贴上去。 */
+    /** 宝塔脚本框里的那一行。按当前 PHP 版本拼路径，不探测 /www/server/php。 */
     public static function baotaScheduleCommand(): string
     {
-        $line = preg_replace('/^\* \* \* \* \* /', '', self::scheduleCronLine()) ?: self::scheduleCronLine();
         $siteRoot = str_replace('\\', '/', rtrim(base_path(), '/\\'));
-        $example = '/www/server/php/84/bin/php '.self::quote($siteRoot.'/artisan').' schedule:run >> /dev/null 2>&1';
-        if (str_contains($line, 'php-fpm') || ! str_starts_with(ltrim($line), '/')) {
-            return $example;
+
+        return self::baotaPhpBinary().' '.self::quote($siteRoot.'/artisan').' schedule:run >> /dev/null 2>&1';
+    }
+
+    public static function baotaPhpBinary(?string $phpVersion = null): string
+    {
+        $phpVersion ??= PHP_VERSION;
+        $folder = '84';
+        if (preg_match('/^(\d+)\.(\d+)/', $phpVersion, $match) === 1) {
+            $folder = $match[1].$match[2];
         }
 
-        return $line;
+        return '/www/server/php/'.$folder.'/bin/php';
     }
 
     public static function quote(string $path): string
@@ -98,19 +104,32 @@ class PhpCli
         if (preg_match('/^(\d+)\.(\d+)/', $phpVersion, $m)) {
             $add('/www/server/php/'.$m[1].$m[2].'/bin/'.$exe);
         }
-        if (is_dir('/www/server/php')) {
-            foreach (scandir('/www/server/php') ?: [] as $name) {
-                if ($name === '.' || $name === '..') {
-                    continue;
-                }
-                $add('/www/server/php/'.$name.'/bin/'.$exe);
-            }
-        }
         if ($binary === '' || self::isWorker($binary)) {
             $add($exe);
         }
 
         return $out;
+    }
+
+    /** open_basedir 之外的路径不探测，避免 is_dir / is_file 变成 500。 */
+    public static function allowedPath(string $path): bool
+    {
+        $basedir = ini_get('open_basedir');
+        if (! is_string($basedir) || $basedir === '') {
+            return true;
+        }
+        $path = str_replace('\\', '/', $path);
+        foreach (explode(PATH_SEPARATOR, $basedir) as $root) {
+            $root = rtrim(str_replace('\\', '/', trim($root)), '/');
+            if ($root === '') {
+                continue;
+            }
+            if ($path === $root || str_starts_with($path, $root.'/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function isWorker(string $path): bool
