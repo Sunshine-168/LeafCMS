@@ -11,10 +11,10 @@ class AdminLogAction
         $segments = self::segments($path);
         $joined = implode('/', $segments);
         if ($joined === 'login') {
-            return ($status !== null && $status >= 400) ? '登录失败' : '登录了后台';
+            return admin_text(($status !== null && $status >= 400) ? '登录失败' : '登录了后台');
         }
         if ($joined === 'logout') {
-            return '退出了登录';
+            return admin_text('退出了登录');
         }
         $special = self::special($joined, $method);
         if ($special !== null) {
@@ -23,42 +23,59 @@ class AdminLogAction
 
         $resource = $segments[0] ?? '';
         $object = self::objects()[$resource] ?? null;
+        $objectLabel = $object ? admin_text($object) : '';
         $last = $segments[array_key_last($segments)] ?? '';
 
         if ($last === 'toggle') {
-            return $object ? '启用或停用了'.$object : '启用或停用了一项';
+            return $object
+                ? admin_text('启用或停用了:object', ['object' => $objectLabel])
+                : admin_text('启用或停用了一项');
         }
         if ($last === 'default') {
             return match ($resource) {
-                'locales' => '设为默认语言',
-                'sites' => '设为默认站点',
-                default => $object ? '设为默认'.$object : '设为默认',
+                'locales' => admin_text('设为默认语言'),
+                'sites' => admin_text('设为默认站点'),
+                default => $object
+                    ? admin_text('设为默认:object', ['object' => $objectLabel])
+                    : admin_text('设为默认'),
             };
         }
         if ($last === 'move') {
-            return $object ? '调整了'.$object.'顺序' : '调整了顺序';
+            return $object
+                ? admin_text('调整了:object顺序', ['object' => $objectLabel])
+                : admin_text('调整了顺序');
         }
         if ($last === 'batch') {
-            return $object ? '批量处理了'.$object : '做了批量操作';
+            return $object
+                ? admin_text('批量处理了:object', ['object' => $objectLabel])
+                : admin_text('做了批量操作');
         }
         if (($segments[2] ?? '') === 'fields' || (($segments[0] ?? '') === 'models' && ($segments[1] ?? '') === 'fields')) {
-            return match ($method) {
+            return admin_text(match ($method) {
                 'POST' => '新增了字段',
                 'PUT', 'PATCH' => '保存了字段',
                 'DELETE' => '删除了字段',
                 default => '改了字段',
-            };
+            });
         }
 
         $hasId = isset($segments[1]) && ctype_digit((string) $segments[1]);
 
         return match ($method) {
-            'DELETE' => $object ? '删除了'.$object : '删除了记录',
-            'PUT', 'PATCH' => $object ? '保存了'.$object : '保存了设置',
+            'DELETE' => $object
+                ? admin_text('删除了:object', ['object' => $objectLabel])
+                : admin_text('删除了记录'),
+            'PUT', 'PATCH' => $object
+                ? admin_text('保存了:object', ['object' => $objectLabel])
+                : admin_text('保存了设置'),
             'POST' => $hasId
-                ? ($object ? '改了'.$object : '做了一次操作')
-                : ($object ? '新增了'.$object : '提交了操作'),
-            default => '做了一次操作',
+                ? ($object
+                    ? admin_text('改了:object', ['object' => $objectLabel])
+                    : admin_text('做了一次操作'))
+                : ($object
+                    ? admin_text('新增了:object', ['object' => $objectLabel])
+                    : admin_text('提交了操作')),
+            default => admin_text('做了一次操作'),
         };
     }
 
@@ -117,10 +134,10 @@ class AdminLogAction
             'sitemap' => '保存了站点地图',
         ];
         if (isset($exact[$joined]) && $exact[$joined] !== null) {
-            return $exact[$joined];
+            return admin_text($exact[$joined]);
         }
 
-        return match (true) {
+        $text = match (true) {
             (bool) preg_match('#^entries/\d+/preview$#', $joined) => '预览了内容',
             (bool) preg_match('#^entries/\d+/revisions/\d+/restore$#', $joined) => '恢复了历史版本',
             (bool) preg_match('#^recycle/\d+/restore$#', $joined) => '从回收站恢复了内容',
@@ -138,6 +155,8 @@ class AdminLogAction
             $method === 'DELETE' && (bool) preg_match('#^themes/[^/]+$#', $joined) => '删除了主题',
             default => null,
         };
+
+        return $text === null ? null : admin_text($text);
     }
 
     /** @return array{resource:string,object:?string,id:?int}|null */
@@ -178,7 +197,6 @@ class AdminLogAction
             'categories' => 'admin.categories.edit',
             'members' => 'admin.members.edit',
             'admin-users' => 'admin.admin-users.edit',
-            'sites' => 'admin.sites.edit',
             'locales' => 'admin.locales.edit',
             'redirects' => 'admin.redirects.edit',
             'forms' => 'admin.forms.edit',

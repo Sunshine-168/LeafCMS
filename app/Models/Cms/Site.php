@@ -15,6 +15,18 @@ class Site extends Model
         'name', 'domain', 'is_default', 'is_active', 'theme', 'remark',
     ];
 
+    /** 安装时的演示站名按原文匹配。改过的名称保持原文。 */
+    public function displayName(): string
+    {
+        $name = trim((string) $this->name);
+
+        return match ($name) {
+            '综合 CMS 演示' => admin_t('site_pack.demo'),
+            'IG包网' => admin_t('site_pack.ig'),
+            default => $name,
+        };
+    }
+
     protected function casts(): array
     {
         return [

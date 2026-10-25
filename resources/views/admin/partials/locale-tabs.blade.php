@@ -30,11 +30,11 @@
         @endforeach
         @if($advanced !== [])
             <details class="entry-seo">
-                <summary>搜索引擎（可选）</summary>
+                <summary>{{ admin_text('搜索引擎') }}</summary>
                 @foreach($advanced as $field => $meta)
                     <label>{{ $meta['label'] }}</label>
                     @if(($meta['type'] ?? 'text') === 'textarea')
-                        <textarea name="locales[{{ $code }}][{{ $field }}]" rows="3">{{ old("locales.$code.$field", $model?->translation($field, $code)) }}</textarea>
+                        <textarea name="locales[{{ $code }}][{{ $field }}]" rows="2">{{ old("locales.$code.$field", $model?->translation($field, $code)) }}</textarea>
                     @else
                         <input type="text" name="locales[{{ $code }}][{{ $field }}]" value="{{ old("locales.$code.$field", $model?->translation($field, $code)) }}">
                     @endif

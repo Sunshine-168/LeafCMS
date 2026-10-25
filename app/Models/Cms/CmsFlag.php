@@ -33,6 +33,41 @@ class CmsFlag extends Model
         });
     }
 
+    /** 内置标记按标识码显示。改过的名称保持原文。 */
+    public function displayName(): string
+    {
+        return self::labelFor((string) $this->name, (string) $this->title);
+    }
+
+    /** @return array<string, string> */
+    public static function displayOptions(): array
+    {
+        $out = [];
+        foreach (self::options() as $name => $title) {
+            $out[$name] = self::labelFor((string) $name, (string) $title);
+        }
+
+        return $out;
+    }
+
+    public static function labelFor(string $name, string $title): string
+    {
+        $title = trim($title);
+        $seeds = [
+            'top' => '置顶',
+            'recommend' => '推荐',
+            'hot' => '热门',
+            'headline' => '头条',
+            'about' => '关于',
+            'live' => '直播',
+        ];
+        if (($seeds[$name] ?? null) === $title) {
+            return admin_t('flag_pack.'.$name);
+        }
+
+        return $title !== '' ? $title : $name;
+    }
+
     protected static function booted(): void
     {
         static::saved(fn () => Cache::forget(self::cacheKey()));

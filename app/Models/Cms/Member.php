@@ -31,6 +31,12 @@ class Member extends Authenticatable
         ];
     }
 
+    /** 会员名是库里的数据，按保存的原文显示。编辑框仍用 name。 */
+    public function displayName(): string
+    {
+        return trim((string) $this->name);
+    }
+
     public function group(): BelongsTo
     {
         return $this->belongsTo(MemberGroup::class, 'group_id');

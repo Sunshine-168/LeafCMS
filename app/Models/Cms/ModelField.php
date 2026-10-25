@@ -61,9 +61,15 @@ class ModelField extends Model
         return null;
     }
 
+    /** 字段名和选项是库里的数据，按保存的原文显示。编辑框仍用 label。 */
+    public function displayLabel(): string
+    {
+        return trim((string) ($this->label ?: $this->name));
+    }
+
     public static function typeLabel(string $type): string
     {
-        return match ($type) {
+        $label = match ($type) {
             'text' => '单行文本',
             'textarea' => '多行文本',
             'editor' => '编辑器',
@@ -78,9 +84,11 @@ class ModelField extends Model
             'radio' => '单选',
             'checkbox' => '多选',
             'switch' => '开关',
-            'map' => '地图',
+            'map' => '地图定位',
             'entry' => '关联文档',
             default => $type,
         };
+
+        return $label === $type ? $type : admin_text($label);
     }
 }

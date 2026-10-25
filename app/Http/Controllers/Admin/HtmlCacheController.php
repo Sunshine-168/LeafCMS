@@ -17,8 +17,7 @@ class HtmlCacheController extends Controller
         private readonly HtmlCacheService $htmlCache,
         private readonly DiskHtmlService $diskHtml,
         private readonly SettingService $settings,
-    ) {
-    }
+    ) {}
 
     /** 全页缓存管理 */
     public function edit(): View
@@ -30,7 +29,7 @@ class HtmlCacheController extends Controller
         $lastBust = $this->htmlCache->lastBust();
         $ttlOptions = HtmlCacheService::ttlOptions();
         if (! array_key_exists($ttl, $ttlOptions)) {
-            $ttlOptions[$ttl] = '当前 '.$this->ttlPlain($ttl);
+            $ttlOptions[$ttl] = admin_text('当前 :label', ['label' => $this->ttlPlain($ttl)]);
         }
 
         return view('admin.html_cache.edit', [
@@ -57,7 +56,7 @@ class HtmlCacheController extends Controller
 
         return redirect()->route('admin.html-cache.edit')->with(
             'status',
-            $on ? '已打开磁盘静态页，可以开始生成' : '已关闭磁盘静态页'
+            $on ? admin_text('已打开磁盘静态页，可以开始生成') : admin_text('已关闭磁盘静态页')
         );
     }
 
@@ -75,7 +74,7 @@ class HtmlCacheController extends Controller
 
         return redirect()->route('admin.html-cache.edit')->with(
             'status',
-            $request->boolean('html_cache_enabled') ? '已开启全页缓存' : '已关闭全页缓存'
+            $request->boolean('html_cache_enabled') ? admin_text('已开启全页缓存') : admin_text('已关闭全页缓存')
         );
     }
 
@@ -84,21 +83,20 @@ class HtmlCacheController extends Controller
     {
         $this->htmlCache->forgetAll('admin:clear');
 
-        return redirect()->route('admin.html-cache.edit')->with('status', '已清空。访客下一次打开会重新生成页面。');
+        return redirect()->route('admin.html-cache.edit')->with('status', admin_text('已清空。访客下一次打开会重新生成页面。'));
     }
 
     /** 预热 */
     public function warm(Request $request): RedirectResponse
     {
         if (! $this->htmlCache->enabled()) {
-            return redirect()->route('admin.html-cache.edit')->with('error', '请先打开全页缓存并保存');
+            return redirect()->route('admin.html-cache.edit')->with('error', admin_text('请先打开全页缓存并保存'));
         }
 
         $result = $this->htmlCache->warm((int) $request->input('entries', 30));
-        $msg = '已预热 '.$result['ok'].' 页';
-        if ($result['fail'] > 0) {
-            $msg .= '，'.$result['fail'].' 页没生成好';
-        }
+        $msg = $result['fail'] > 0
+            ? admin_text('已预热 :ok 页，:fail 页没生成好', ['ok' => $result['ok'], 'fail' => $result['fail']])
+            : admin_text('已预热 :ok 页', ['ok' => $result['ok']]);
 
         return redirect()->route('admin.html-cache.edit')->with('status', $msg);
     }
@@ -107,7 +105,7 @@ class HtmlCacheController extends Controller
     public function buildDisk(Request $request): JsonResponse|RedirectResponse
     {
         if (! $this->diskHtml->enabled()) {
-            $msg = '请先打开磁盘静态页并保存';
+            $msg = admin_text('请先打开磁盘静态页并保存');
             if ($request->expectsJson()) {
                 return response()->json(['message' => $msg, 'status' => 'error'], 422);
             }
@@ -126,10 +124,9 @@ class HtmlCacheController extends Controller
         }
 
         $result = $this->diskHtml->build($limit > 0 ? $limit : 200);
-        $msg = '已写成 '.$result['ok'].' 个静态文件';
-        if ($result['fail'] > 0) {
-            $msg .= '，'.$result['fail'].' 页没写上';
-        }
+        $msg = $result['fail'] > 0
+            ? admin_text('已写成 :ok 个静态文件，:fail 页没写上', ['ok' => $result['ok'], 'fail' => $result['fail']])
+            : admin_text('已写成 :ok 个静态文件', ['ok' => $result['ok']]);
 
         return redirect()->route('admin.html-cache.edit')->with('status', $msg);
     }
@@ -140,7 +137,7 @@ class HtmlCacheController extends Controller
         $job = $this->diskHtml->publicJob();
         $kind = $job['kind'] ?? 'build';
         if ($kind !== 'clear' && ! $this->diskHtml->enabled()) {
-            return response()->json(['message' => '请先打开磁盘静态页并保存', 'status' => 'error'], 422);
+            return response()->json(['message' => admin_text('请先打开磁盘静态页并保存'), 'status' => 'error'], 422);
         }
 
         $chunk = (int) $request->input('chunk', $kind === 'clear' ? 40 : 6);
@@ -176,25 +173,25 @@ class HtmlCacheController extends Controller
 
         return redirect()->route('admin.html-cache.edit')->with(
             'status',
-            $n > 0 ? '已删掉 '.$n.' 个静态文件' : '没有可删的静态文件'
+            $n > 0 ? admin_text('已删掉 :n 个静态文件', ['n' => $n]) : admin_text('没有可删的静态文件')
         );
     }
 
     protected function ttlPlain(int $seconds): string
     {
         if ($seconds <= 0) {
-            return '改内容后马上换新';
+            return admin_text('改内容后马上换新');
         }
         if ($seconds % 86400 === 0) {
-            return ($seconds / 86400).' 天';
+            return admin_text(':n 天', ['n' => $seconds / 86400]);
         }
         if ($seconds % 3600 === 0) {
-            return ($seconds / 3600).' 小时';
+            return admin_text(':n 小时', ['n' => $seconds / 3600]);
         }
         if ($seconds % 60 === 0) {
-            return ($seconds / 60).' 分钟';
+            return admin_text(':n 分钟', ['n' => $seconds / 60]);
         }
 
-        return $seconds.' 秒';
+        return admin_text(':n 秒', ['n' => $seconds]);
     }
 }

@@ -69,7 +69,7 @@ class FormSubmissionController extends Controller
     {
         $this->submissions->markRead($submission, false);
 
-        return redirect()->route('admin.form-submissions.index')->with('status', '已标为未读');
+        return redirect()->route('admin.form-submissions.index')->with('status', admin_text('已标为未读'));
     }
 
     /** 导出 CSV */
@@ -85,12 +85,21 @@ class FormSubmissionController extends Controller
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['ID', '表单', '已读', '字段JSON', 'IP', '备注', '回复时间', '提交时间']);
+            fputcsv($out, [
+                'ID',
+                admin_text('表单'),
+                admin_text('已读'),
+                admin_text('字段JSON'),
+                'IP',
+                admin_text('备注'),
+                admin_text('回复时间'),
+                admin_text('提交时间'),
+            ]);
             foreach ($rows as $row) {
                 fputcsv($out, [
                     $row->id,
                     $row->form?->name,
-                    $row->is_read ? '是' : '否',
+                    $row->is_read ? admin_text('是') : admin_text('否'),
                     json_encode($row->data, JSON_UNESCAPED_UNICODE),
                     $row->ip,
                     $row->admin_note,

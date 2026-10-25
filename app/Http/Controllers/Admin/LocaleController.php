@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cms\CmsLocale;
+use App\Models\Cms\Setting;
 use App\Services\Admin\LocaleAdminService;
+use App\Support\AdminUi;
 use App\Support\CurrentSite;
 use App\Support\Locale;
+use App\Support\ThemeUi;
+use App\Support\TranslationWatch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,10 +31,11 @@ class LocaleController extends Controller
             'locales' => $this->locales->all(),
             'tab' => $tab,
             'coverage' => $this->locales->coverage(),
-            'themeCatalog' => \App\Support\ThemeUi::catalog(),
-            'themeStored' => \App\Support\ThemeUi::stored(),
-            'adminUi' => \App\Support\AdminUi::current(),
-            'siteAdminUi' => \App\Models\Cms\Setting::getValue('admin_ui_locale', \App\Support\AdminUi::ZH) ?: \App\Support\AdminUi::ZH,
+            'translationGaps' => TranslationWatch::counts(),
+            'themeCatalog' => ThemeUi::catalog(),
+            'themeStored' => ThemeUi::stored(),
+            'adminUi' => AdminUi::current(),
+            'siteAdminUi' => Setting::getValue('admin_ui_locale', AdminUi::ZH) ?: AdminUi::ZH,
         ]);
     }
 

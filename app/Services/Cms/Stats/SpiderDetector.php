@@ -72,10 +72,10 @@ class SpiderDetector
     public function groupLabel(string $group): string
     {
         return match ($group) {
-            'search' => '搜索引擎',
-            'tool' => 'SEO 工具',
-            'ai' => 'AI 爬虫',
-            default => '其他',
+            'search' => admin_text('搜索引擎'),
+            'tool' => admin_text('SEO 工具'),
+            'ai' => admin_text('AI 爬虫'),
+            default => admin_text('其他'),
         };
     }
 
@@ -88,7 +88,7 @@ class SpiderDetector
     public function watchLabel(string $name): string
     {
         return match ($name) {
-            'Baiduspider' => '百度',
+            'Baiduspider' => admin_text('百度'),
             'Googlebot' => 'Google',
             'Bingbot' => 'Bing',
             default => $name,

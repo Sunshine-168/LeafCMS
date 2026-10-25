@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'restore_prompt' => '请输入「:phrase」以确认',
+    'restore_confirm' => '确认恢复这份备份？全部站点的当前数据将被覆盖。',
+    'restore_revision_confirm' => '还原到该版本？当前内容会另存为新版本。',
+    'demo_confirm' => '确认导入示例数据？已有示例栏目、文章和账号可能被更新，请勿用于正式站点。',
+    'site_context' => '当前站点：:name。电脑与手机的外观在这里统一设置。',
+    'theme_context' => '当前电脑主题：:desktop；手机主题：:mobile。',
+    'schedule_timezone' => '定时发布需填写未来时间。时区：:timezone。',
+    'preview_saved_at' => '预览的是最后保存的版本（:time，:timezone）。手机宽度仅模拟屏幕尺寸，独立手机主题请用实际手机检查。',
+    'parent_context' => '将建在「:name」下面。保存后会出现在上级栏目的下一层。',
+    'entry_title' => ':action · :model', 'scheduled_message' => '已安排定时发布：:time（:timezone）',
+    'local_clean' => '尚无未保存修改。',
+    'local_saved' => '有未保存修改 · 本地副本已保存于 :time，仅当前浏览器可恢复，7 天后过期。尚未保存到服务器。',
+    'local_failed' => '有未保存修改 · 本地副本保存失败，请及时保存到服务器。离开前仍会提醒。',
+    'server_saved' => '已保存到服务器。', 'drafts_found' => '发现 :count 份未保存副本，各编辑窗口独立保留。',
+    'server_changed' => '服务器版本已有变化，请核对后再恢复。', 'recover_reminder' => '恢复后仍需手动保存。',
+    'draft_missing' => '该副本已被移除或保存，请重新打开编辑页查看最新副本。',
+    'draft_unreadable' => '暂时无法读取该副本，请保留当前输入并稍后重试。',
+    'local_unavailable' => '当前浏览器无法保存本地副本，请及时保存到服务器。', 'untitled' => '未命名内容',
+    'draft_summary' => '保存后仅后台可见。', 'pending_summary' => '提交后等待审核，前台暂不可见。',
+    'schedule_summary' => '保存后按所填时间发布，请核对上方时区。', 'published_summary' => '保存后立即更新线上内容。',
+    'preview_summary' => '“保存并预览”也会按此方式保存。',
+];

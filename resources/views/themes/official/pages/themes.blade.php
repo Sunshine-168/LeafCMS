@@ -8,29 +8,30 @@
     <div class="page-hero">
         <div class="wrap">
             <div class="kicker"><i></i> Themes</div>
-            <h1>{{ cms_t('主题包决定站点形态', 'The theme decides the kind of site') }}</h1>
-            <p class="lead">{{ cms_t('同一套后台可以换成不同的网站外观。切换主题不会清掉已经发布的文章，缺少的栏目会自动补上。', 'One admin can wear different skins. Switching does not delete published entries. Missing sections are added.') }}</p>
+            <h1>{{ cms_t('从适合的主题，开始你的网站。', 'Find a starting point for your website.') }}</h1>
+            <p class="lead">{{ cms_t('企业官网、内容博客、资源目录。选择适合的展示方式，再用自己的内容和品牌把它变成你的网站。', 'Company websites, publications and resource libraries. Choose a presentation, then make it yours with your content and brand.') }}</p>
         </div>
     </div>
     <section>
-        <div class="wrap themes">
-            <article class="theme" id="enterprise"><div class="swatch" style="background:#14624e"></div><div class="theme-body"><h3>{{ cms_t('企业', 'Company') }}</h3><p>{{ cms_t('公司官网。适合发布新闻、公司介绍、产品和招聘信息。', 'Company site for news, about pages, products, and jobs.') }}</p><div class="pills"><span class="pill">article</span><span class="pill">page</span><span class="pill">product</span><span class="pill">job</span></div></div></article>
-            <article class="theme" id="mobile"><div class="swatch" style="background:#1d6b6b"></div><div class="theme-body"><h3>{{ cms_t('移动', 'Mobile') }}</h3><p>{{ cms_t('手机上的阅读外观。可以按访问设备或域名自动切换。', 'A reading skin for phones. It can switch by device or domain.') }}</p><div class="pills"><span class="pill">mobile_theme</span></div></div></article>
-            <article class="theme" id="blog"><div class="swatch" style="background:#8c4a2f"></div><div class="theme-body"><h3>{{ cms_t('博客', 'Blog') }}</h3><p>{{ cms_t('以文章为主，适合持续更新的内容站点。', 'Built around articles for a site that keeps publishing.') }}</p><div class="pills"><span class="pill">article</span></div></div></article>
-            <article class="theme" id="download"><div class="swatch" style="background:#2f5d8c"></div><div class="theme-body"><h3>{{ cms_t('下载站', 'Downloads') }}</h3><p>{{ cms_t('用来整理资料，访客下载时会计入次数。', 'Files for visitors to download, with a count.') }}</p><div class="pills"><span class="pill">download</span></div></div></article>
-            <article class="theme" id="nav"><div class="swatch" style="background:#3d6b4f"></div><div class="theme-body"><h3>{{ cms_t('导航', 'Directory') }}</h3><p>{{ cms_t('把常用网址按分类列出来，点击后会记下访问次数。', 'Links grouped by category. Clicks are counted.') }}</p><div class="pills"><span class="pill">link</span></div></div></article>
-            <article class="theme" id="source"><div class="swatch" style="background:#5a4a8c"></div><div class="theme-body"><h3>{{ cms_t('源码', 'Source') }}</h3><p>{{ cms_t('用来展示和介绍项目，适合源码、案例这一类目录。', 'A catalog for projects, source packages, and cases.') }}</p><div class="pills"><span class="pill">source</span></div></div></article>
-            <article class="theme" id="manga"><div class="swatch" style="background:#8c3d55"></div><div class="theme-body"><h3>{{ cms_t('漫画', 'Manga') }}</h3><p>{{ cms_t('作品和章节分开管理，适合连载内容。', 'Works and chapters are separate. Suited to serials.') }}</p><div class="pills"><span class="pill">manga</span><span class="pill">chapter</span></div></div></article>
-            <article class="theme" id="sports"><div class="swatch" style="background:#2f6b4f"></div><div class="theme-body"><h3>{{ cms_t('体育', 'Sports') }}</h3><p>{{ cms_t('用来发布公开的赛事资讯。请只展示可以合法公开的信息。', 'Public match information. Only publish what you may legally show.') }}</p><div class="pills"><span class="pill">signal</span></div></div></article>
-            <article class="theme" id="default"><div class="swatch" style="background:#6b6458"></div><div class="theme-body"><h3>{{ cms_t('默认', 'Default') }}</h3><p>{{ cms_t('页面不齐时用来补位。缺页时会回到企业主题的对应页面。', 'Fills in when a page is missing, then falls back to the company theme.') }}</p><div class="pills"><span class="pill">fallback</span></div></div></article>
+        <div class="wrap catalog-toolbar">
+            <div class="theme-filterbar" hidden aria-label="{{ cms_t('按用途筛选主题', 'Filter themes by purpose') }}">
+                <button type="button" data-theme-filter="all" aria-pressed="true">{{ cms_t('全部主题', 'All themes') }}</button>
+                <button type="button" data-theme-filter="business" aria-pressed="false">{{ cms_t('企业展示', 'Business') }}</button>
+                <button type="button" data-theme-filter="publishing" aria-pressed="false">{{ cms_t('内容出版', 'Publishing') }}</button>
+                <button type="button" data-theme-filter="resources" aria-pressed="false">{{ cms_t('资源与目录', 'Resources') }}</button>
+                <button type="button" data-theme-filter="utility" aria-pressed="false">{{ cms_t('移动与基础', 'Mobile & base') }}</button>
+            </div>
+            <p id="theme-results" role="status" data-label="{{ cms_t('找到 :count 套主题', ':count themes found') }}">{{ cms_t('8 套用途主题 + 1 套默认回退模板', '8 purpose-built themes + 1 default fallback') }}</p>
+            <p class="note">{{ cms_t('下方是内置主题真实模板的首页截图，使用独立中文演示内容，可点击放大。截图不是在线演示，切换主题前仍需核对栏目、模型和模板。', 'Actual homepage screenshots rendered from bundled themes with isolated Chinese sample content. Click to enlarge. These are screenshots, not live demos; check sections, models and templates before switching.') }}</p>
         </div>
+        @include('themes.official.partials.theme-cards')
     </section>
     <section>
         <div class="wrap grid-2">
             <article class="card">
                 <h3>{{ cms_t('自己加一套', 'Add your own') }}</h3>
                 <p>{{ cms_t('可以在后台复制一套现成主题再改，也可以直接上传压缩包。命令行：', 'Copy a theme in the admin, or upload a zip. From the command line:') }}</p>
-                <pre><code>php artisan cms:theme-make brand --from=enterprise --name=品牌站</code></pre>
+                <pre><code>php artisan cms:theme-make brand --from=enterprise --name="{{ cms_t('品牌站', 'Brand site') }}"</code></pre>
             </article>
             <article class="card">
                 <h3>theme.json</h3>

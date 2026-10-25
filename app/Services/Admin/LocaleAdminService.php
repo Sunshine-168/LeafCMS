@@ -185,11 +185,11 @@ class LocaleAdminService
             $remembered = AdminUi::remember($code, true);
             AdminUi::apply();
 
-            return Result::ok($remembered, $this->msg('msg_admin'));
+            return Result::ok($remembered, $this->msg('msg_admin', ['lang' => AdminUi::label($code)]));
         }
         Setting::setValue('admin_ui_locale', $code);
 
-        return Result::ok(null, $code === AdminUi::EN ? $this->msg('msg_site_en') : $this->msg('msg_site_zh'));
+        return Result::ok(null, $this->msg('msg_site', ['lang' => AdminUi::label($code)]));
     }
 
     /** @param  array<string, array<string, string>>  $input */

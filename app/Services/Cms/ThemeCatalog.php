@@ -33,6 +33,14 @@ class ThemeCatalog
         ];
     }
 
+    /** 随仓库提供、按标识码翻译的主题。bc 可删除，不进自带清单。 */
+    protected function themeCopy(): array
+    {
+        return $this->bundled() + [
+            'bc' => ['name' => 'GW 包网', 'description' => '包网招商官网。方案、接口、市场和咨询表单。'],
+        ];
+    }
+
     public function root(): string
     {
         return resource_path('views/themes');
@@ -44,6 +52,17 @@ class ThemeCatalog
         $slug = trim((string) ($site?->theme ?: Setting::getValue('theme', config('cms.theme', 'enterprise'))));
 
         return $slug !== '' ? $slug : 'enterprise';
+    }
+
+    /** @return list<string> */
+    public function currentModelSlugs(): array
+    {
+        $item = $this->get($this->currentSlug());
+
+        return array_values(array_filter(array_map(
+            fn ($row) => is_array($row) ? (string) ($row['slug'] ?? '') : '',
+            $item['models'] ?? []
+        )));
     }
 
     public function exists(string $slug): bool
@@ -59,6 +78,27 @@ class ThemeCatalog
     public function label(string $slug): string
     {
         return $this->get($slug)['name'] ?? $slug;
+    }
+
+    /** 自带主题按标识码显示。改过的名称和说明保持原文。 */
+    protected function displayThemeName(string $slug, string $name): string
+    {
+        $seed = $this->themeCopy()[$slug]['name'] ?? null;
+        if (is_string($seed) && $name === $seed) {
+            return admin_t('theme_pack.'.$slug);
+        }
+
+        return $name;
+    }
+
+    protected function displayThemeDescription(string $slug, string $description): string
+    {
+        $seed = $this->themeCopy()[$slug]['description'] ?? null;
+        if (is_string($seed) && $description === $seed) {
+            return admin_t('theme_pack.'.$slug.'_desc');
+        }
+
+        return $description;
     }
 
     /** @return list<string> */
@@ -176,10 +216,10 @@ class ThemeCatalog
     {
         $out = [];
         foreach (BundledContentModels::definitions() as $modelSlug => $def) {
-            $out[$modelSlug] = (string) ($def['name'] ?? $modelSlug);
+            $out[$modelSlug] = BundledContentModels::displayName($modelSlug, (string) ($def['name'] ?? $modelSlug));
         }
         foreach (ContentModel::query()->orderBy('sort_order')->orderBy('id')->get() as $model) {
-            $out[$model->slug] = (string) $model->name;
+            $out[$model->slug] = $model->displayName();
         }
         $item = $this->get($slug);
         foreach ((array) ($item['models'] ?? []) as $row) {
@@ -211,14 +251,14 @@ class ThemeCatalog
     {
         $item = $this->get($slug);
         if (! $item || ! $item['complete']) {
-            return Result::fail('没有这套主题，或还缺首页模板');
+            return Result::fail(admin_text('没有这套主题，或还缺首页模板'));
         }
         $pack = app(ThemePackInstaller::class)->ensure($slug);
         app(SettingService::class)->save(['theme' => $slug]);
         Artisan::call('view:clear');
         $site = CurrentSite::model();
         if ($site instanceof Site && $site->theme) {
-            $site->theme = $slug;
+            $site->theme = null;
             $site->save();
         }
 
@@ -237,16 +277,16 @@ class ThemeCatalog
         $slug = strtolower(trim($slug));
         $name = trim($name);
         if (! $this->isValidSlug($from) || ! is_dir($this->root().DIRECTORY_SEPARATOR.$from)) {
-            return Result::fail('请选择要复制的主题');
+            return Result::fail(admin_text('请选择要复制的主题'));
         }
         if (! $this->isValidSlug($slug)) {
-            return Result::fail('标识用小写英文开头，可含数字和短横线，如 brand');
+            return Result::fail(admin_text('标识用小写英文开头，可含数字和短横线，如 brand'));
         }
         if (is_dir($this->root().DIRECTORY_SEPARATOR.$slug)) {
-            return Result::fail('这个标识已经有主题了，换一个');
+            return Result::fail(admin_text('这个标识已经有主题了，换一个'));
         }
         if ($name === '') {
-            return Result::fail('请填写显示名称');
+            return Result::fail(admin_text('请填写显示名称'));
         }
 
         $source = $this->root().DIRECTORY_SEPARATOR.$from;
@@ -268,18 +308,18 @@ class ThemeCatalog
     public function installZip(string $zipPath, string $slug = '', string $name = '', string $hint = ''): array
     {
         if (! class_exists(ZipArchive::class)) {
-            return Result::fail('这台服务器还不能解压 zip');
+            return Result::fail(admin_text('这台服务器还不能解压 zip'));
         }
         if ($zipPath === '' || ! is_file($zipPath)) {
-            return Result::fail('请选择 zip 文件');
+            return Result::fail(admin_text('请选择 zip 文件'));
         }
         if (filesize($zipPath) > 8 * 1024 * 1024) {
-            return Result::fail('zip 不要超过 8MB');
+            return Result::fail(admin_text('zip 不要超过 8MB'));
         }
 
         $zip = new ZipArchive;
         if ($zip->open($zipPath) !== true) {
-            return Result::fail('打不开这个 zip');
+            return Result::fail(admin_text('打不开这个 zip'));
         }
 
         $tmp = storage_path('app/theme-upload-'.uniqid('', true));
@@ -297,16 +337,16 @@ class ThemeCatalog
                 $slug = strtolower(trim($hint));
             }
             if (! $this->isValidSlug($slug)) {
-                return Result::fail('标识用小写英文开头，可含数字和短横线，如 brand');
+                return Result::fail(admin_text('标识用小写英文开头，可含数字和短横线，如 brand'));
             }
             if ($this->isBundled($slug) || is_dir($this->root().DIRECTORY_SEPARATOR.$slug)) {
-                return Result::fail('这个标识已经有主题了，换一个');
+                return Result::fail(admin_text('这个标识已经有主题了，换一个'));
             }
 
             File::makeDirectory($tmp, 0755, true);
             $written = $this->extractThemeZip($zip, $tmp, $parsed['prefix']);
             if ($written === 0) {
-                return Result::fail('zip 里没有可用的主题文件');
+                return Result::fail(admin_text('zip 里没有可用的主题文件'));
             }
 
             $name = trim($name) ?: ($this->nameFromManifest($tmp) ?: $slug);
@@ -316,10 +356,10 @@ class ThemeCatalog
 
             $item = $this->get($slug);
             if (! $item || ! $item['complete']) {
-                return Result::ok(['slug' => $slug], '已放上「'.$name.'」，但还缺首页模板，补齐 index/index.blade.php 才能用于本站');
+                return Result::ok(['slug' => $slug], admin_text('已放上「:name」，但还缺首页模板，补齐 index/index.blade.php 才能用于本站', ['name' => $name]));
             }
 
-            return Result::ok(['slug' => $slug], '已上传「'.$name.'」。点用于本站即可换成这套。');
+            return Result::ok(['slug' => $slug], admin_text('已上传「:name」。点用于本站即可换成这套。', ['name' => $name]));
         } finally {
             $zip->close();
             if (is_dir($tmp)) {
@@ -332,14 +372,14 @@ class ThemeCatalog
     {
         $slug = trim($slug);
         if ($this->isBundled($slug)) {
-            return Result::fail('自带主题不能删');
+            return Result::fail(admin_text('自带主题不能删'));
         }
         if ($this->currentSlug() === $slug) {
-            return Result::fail('正在用的主题不能删，先换一套');
+            return Result::fail(admin_text('正在用的主题不能删，先换一套'));
         }
         $dir = $this->root().DIRECTORY_SEPARATOR.$slug;
         if (! is_dir($dir)) {
-            return Result::fail('没有这套主题');
+            return Result::fail(admin_text('没有这套主题'));
         }
         File::deleteDirectory($dir);
 
@@ -369,8 +409,8 @@ class ThemeCatalog
 
         return [
             'slug' => $slug,
-            'name' => $meta['name'],
-            'description' => $meta['description'],
+            'name' => $this->displayThemeName($slug, (string) $meta['name']),
+            'description' => $this->displayThemeDescription($slug, (string) $meta['description']),
             'builtin' => $this->isBundled($slug),
             'complete' => is_file($dir.DIRECTORY_SEPARATOR.'index'.DIRECTORY_SEPARATOR.'index.blade.php'),
             'current' => $current === $slug,
@@ -614,7 +654,10 @@ SVG;
             $payload = $this->resolveModelPayload($dir, $json, $modelSlug);
             $out[] = [
                 'slug' => $modelSlug,
-                'name' => (string) ((is_array($payload) ? ($payload['model']['name'] ?? null) : null) ?: $modelSlug),
+                'name' => BundledContentModels::displayName(
+                    $modelSlug,
+                    (string) ((is_array($payload) ? ($payload['model']['name'] ?? null) : null) ?: $modelSlug)
+                ),
                 'ready' => ContentModel::query()->where('slug', $modelSlug)->exists(),
             ];
         }

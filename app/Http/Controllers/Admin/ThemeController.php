@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class ThemeController extends Controller
 {
@@ -63,13 +64,13 @@ class ThemeController extends Controller
         if (! $file || ! $file->isValid()) {
             return redirect()
                 ->route('admin.themes.index')
-                ->with('error', '请选择 zip 文件')
+                ->with('error', admin_text('请选择 zip 文件'))
                 ->with('theme_add', 'upload');
         }
         if (strtolower($file->getClientOriginalExtension()) !== 'zip') {
             return redirect()
                 ->route('admin.themes.index')
-                ->with('error', '请上传 zip')
+                ->with('error', admin_text('请上传 zip'))
                 ->with('theme_add', 'upload');
         }
 
@@ -133,7 +134,7 @@ class ThemeController extends Controller
         ThemeUi::saveFor($theme, (array) $request->input('phrases', []));
         $this->htmlCache->forgetAll('theme-config:'.$theme);
 
-        $msg = '已保存「'.$item['name'].'」的配置';
+        $msg = admin_text('已保存「:name」的配置', ['name' => $item['name']]);
         if ($item['current']) {
             $pack = $this->packs->ensure($theme);
             $extra = trim((string) ($pack['msg'] ?? ''));
@@ -147,7 +148,7 @@ class ThemeController extends Controller
             ->with('status', $msg);
     }
 
-    public function preview(string $theme): \Symfony\Component\HttpFoundation\Response
+    public function preview(string $theme): Response
     {
         $item = $this->themes->get($theme);
         if (! $item) {

@@ -17,13 +17,29 @@ class SetAdminUiLocale
             if (is_string($ui) && AdminUi::isValid($ui)) {
                 $remembered = AdminUi::remember($ui, saveUser: (bool) auth('admin')->check());
                 AdminUi::apply();
-                $response = $next($request);
+                $response = $this->respond($request, $next);
 
-                return $response->withCookie($remembered['cookie']);
+                $response->headers->setCookie($remembered['cookie']);
+
+                return $response;
             }
             AdminUi::apply();
         }
 
-        return $next($request);
+        return $this->respond($request, $next);
+    }
+
+    private function respond(Request $request, Closure $next): Response
+    {
+        $translator = app('translator');
+        $fallback = $translator->getFallback();
+        if (($request->is('admin') || $request->is('admin/*')) && ! AdminUi::isChinese()) {
+            $translator->setFallback('en');
+        }
+        try {
+            return $next($request);
+        } finally {
+            $translator->setFallback($fallback);
+        }
     }
 }

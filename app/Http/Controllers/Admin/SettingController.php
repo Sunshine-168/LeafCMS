@@ -5,10 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\SettingService;
 use App\Services\Admin\SiteBackupService;
+use App\Services\Cms\ThemeCatalog;
+use App\Support\CurrentSite;
+use App\Support\SettingSections;
 use App\Support\ThemeAppearance;
 use App\Support\UrlMode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SettingController extends Controller
@@ -41,77 +47,104 @@ class SettingController extends Controller
         return view('admin.settings.edit', [
             'settings' => $this->settingService->getMany($keys),
             'tab' => $this->tabFrom($request),
-            'backups' => $this->backups->list(),
+            'site' => CurrentSite::model(),
         ]);
     }
 
     /** 保存站点设置 */
     public function update(Request $request): RedirectResponse
     {
-        $data = $request->only([
-            'site_name', 'site_description', 'site_keywords', 'theme',
-            'upload_watermark_text', 'upload_watermark_position', 'site_closed_message', 'analytics_code',
-            'mail_host', 'mail_encryption', 'mail_username', 'mail_from_address', 'mail_from_name',
-            'mobile_theme', 'mobile_domain', 'mobile_detect', 'api_token',
-            'comments_notify_email', 'map_default_lng', 'map_default_lat',
-            'cdn_url', 'robots_extra',
-            'footer_text', 'icp', 'hero_title', 'hero_subtitle', 'primary_color',
-        ]);
-        $data['upload_thumb_width'] = (string) max(0, (int) $request->input('upload_thumb_width', 0));
-        $data['map_default_lng'] = (string) $request->input('map_default_lng', '116.397');
-        $data['map_default_lat'] = (string) $request->input('map_default_lat', '39.908');
-        $data['site_closed'] = $request->boolean('site_closed') ? '1' : '0';
-        $data['tag_autolink'] = $request->boolean('tag_autolink') ? '1' : '0';
-        $data['api_enable'] = $request->boolean('api_enable') ? '1' : '0';
-        $data['comments_enabled'] = $request->boolean('comments_enabled') ? '1' : '0';
-        $data['comments_guest'] = $request->boolean('comments_guest') ? '1' : '0';
-        $data['comments_auto_approve'] = $request->boolean('comments_auto_approve') ? '1' : '0';
-        $data['comments_rate_seconds'] = (string) max(10, min(3600, (int) $request->input('comments_rate_seconds', 60)));
-        $data['mail_port'] = (string) max(1, (int) $request->input('mail_port', 587));
-        $mode = (string) $request->input('url_mode', UrlMode::CAT_ENTRY);
-        $data['url_mode'] = array_key_exists($mode, UrlMode::options()) ? $mode : UrlMode::CAT_ENTRY;
-        $detect = (string) $request->input('mobile_detect', 'both');
-        $data['mobile_detect'] = in_array($detect, ['both', 'domain', 'ua'], true) ? $detect : 'both';
-        if ($request->filled('mail_password')) {
-            $data['mail_password'] = (string) $request->input('mail_password');
+        $section = $request->input('section');
+        if ($section !== null) {
+            $request->validate(['section' => ['required', Rule::in(array_keys(SettingSections::LABELS))]]);
         }
-        $pos = strtolower((string) $request->input('upload_watermark_position', 'br'));
-        $data['upload_watermark_position'] = in_array($pos, ['br', 'bl', 'tr', 'tl', 'center'], true) ? $pos : 'br';
-        if ($request->boolean('upload_watermark_image_clear')) {
-            $data['upload_watermark_image'] = '';
+        $allowed = $section ? SettingSections::FIELDS[$section] : array_unique(array_merge(...array_values(SettingSections::FIELDS)));
+        $data = $request->only($allowed);
+        foreach (SettingSections::CHECKBOXES as $key) {
+            if (($section && in_array($key, $allowed, true)) || array_key_exists($key, $data)) {
+                $data[$key] = $request->boolean($key) ? '1' : '0';
+            }
         }
-        if ($request->hasFile('watermark_image')) {
-            $request->validate(['watermark_image' => 'image|max:2048']);
-            $data['upload_watermark_image'] = $request->file('watermark_image')->store('cms/watermark', 'public');
+        $themes = array_column(array_filter(app(ThemeCatalog::class)->all(), fn ($theme) => $theme['complete']), 'slug');
+        Validator::make($data, [
+            'site_name' => 'sometimes|required|string|max:120',
+            'site_description' => 'nullable|string|max:2000',
+            'site_keywords' => 'nullable|string|max:500',
+            'site_closed_message' => 'nullable|string|max:1000',
+            'api_token' => 'nullable|string|max:512',
+            'mail_host' => 'nullable|string|max:255',
+            'mail_username' => 'nullable|string|max:255',
+            'mail_password' => 'nullable|string|max:1000',
+            'mail_from_name' => 'nullable|string|max:255',
+            'theme' => ['sometimes', 'required', Rule::in($themes)],
+            'mobile_theme' => ['nullable', Rule::in($themes)],
+            'url_mode' => ['sometimes', Rule::in(array_keys(UrlMode::options()))],
+            'mobile_detect' => 'sometimes|in:both,domain,ua',
+            'upload_watermark_position' => 'sometimes|in:br,bl,tr,tl,center',
+            'upload_thumb_width' => 'nullable|integer|min:0|max:5000',
+            'comments_rate_seconds' => 'nullable|integer|min:10|max:3600',
+            'mail_port' => 'nullable|integer|min:1|max:65535',
+            'mail_from_address' => 'nullable|email',
+            'comments_notify_email' => 'nullable|email',
+            'cdn_url' => 'nullable|url:http,https',
+            'map_default_lng' => 'nullable|numeric|between:-180,180',
+            'map_default_lat' => 'nullable|numeric|between:-90,90',
+            'watermark_image' => 'nullable|image|max:2048',
+            'logo_file' => 'nullable|image|max:2048',
+            'favicon_file' => 'nullable|image|max:512',
+        ])->validate();
+        $api = $this->settingService->getMany(['api_enable', 'api_token']);
+        if (($data['api_enable'] ?? $api['api_enable']) === '1' && (array_key_exists('api_enable', $data) || array_key_exists('api_token', $data))) {
+            $token = (string) (array_key_exists('api_token', $data) ? $data['api_token'] : $api['api_token']);
+            if (trim($token) === '') {
+                throw ValidationException::withMessages(['api_token' => admin_text('启用接口密钥保护前，请填写接口密钥')]);
+            }
         }
-        $cdn = trim((string) ($data['cdn_url'] ?? ''));
-        if ($cdn !== '' && ! preg_match('#^https?://#i', $cdn)) {
-            $cdn = '';
+        if (array_key_exists('mail_password', $data) && ! $request->filled('mail_password')) {
+            unset($data['mail_password']);
         }
-        $data['cdn_url'] = rtrim($cdn, '/');
-        $data['robots_extra'] = $this->sanitizeRobotsExtra((string) ($data['robots_extra'] ?? ''));
-        $data['primary_color'] = ThemeAppearance::sanitizeColor((string) ($data['primary_color'] ?? ''));
-        $data['icp'] = mb_substr(trim((string) ($data['icp'] ?? '')), 0, 80);
-        $data['footer_text'] = mb_substr(trim((string) ($data['footer_text'] ?? '')), 0, 500);
-        $data['hero_title'] = mb_substr(trim((string) ($data['hero_title'] ?? '')), 0, 120);
-        $data['hero_subtitle'] = mb_substr(trim((string) ($data['hero_subtitle'] ?? '')), 0, 200);
-        if ($request->boolean('logo_clear')) {
-            $data['logo'] = '';
+        foreach (['upload_thumb_width', 'comments_rate_seconds', 'mail_port'] as $key) {
+            if (array_key_exists($key, $data)) {
+                $data[$key] = (string) ($data[$key] ?? match ($key) {
+                    'mail_port' => 587, 'comments_rate_seconds' => 60, default => 0,
+                });
+            }
         }
-        if ($request->boolean('favicon_clear')) {
-            $data['favicon'] = '';
+        if (array_key_exists('cdn_url', $data)) {
+            $data['cdn_url'] = rtrim(trim((string) $data['cdn_url']), '/');
         }
-        if ($request->hasFile('logo_file')) {
-            $request->validate(['logo_file' => 'image|max:2048']);
-            $data['logo'] = $request->file('logo_file')->store('cms/brand', 'public');
+        if (array_key_exists('robots_extra', $data)) {
+            $data['robots_extra'] = $this->sanitizeRobotsExtra((string) $data['robots_extra']);
         }
-        if ($request->hasFile('favicon_file')) {
-            $request->validate(['favicon_file' => 'image|max:512']);
-            $data['favicon'] = $request->file('favicon_file')->store('cms/brand', 'public');
+        if (array_key_exists('primary_color', $data)) {
+            $data['primary_color'] = ThemeAppearance::sanitizeColor((string) $data['primary_color']);
+        }
+        foreach (['icp' => 80, 'footer_text' => 500, 'hero_title' => 120, 'hero_subtitle' => 200] as $key => $max) {
+            if (array_key_exists($key, $data)) {
+                $data[$key] = mb_substr(trim((string) $data[$key]), 0, $max);
+            }
+        }
+        foreach ([
+            'watermark_image' => ['upload_watermark_image', 'upload_watermark_image_clear', 'cms/watermark'],
+            'logo_file' => ['logo', 'logo_clear', 'cms/brand'],
+            'favicon_file' => ['favicon', 'favicon_clear', 'cms/brand'],
+        ] as $file => [$key, $clear, $directory]) {
+            if (in_array($file, $allowed, true) && $request->boolean($clear)) {
+                $data[$key] = '';
+            }
+            if (in_array($file, $allowed, true) && $request->hasFile($file)) {
+                $data[$key] = $request->file($file)->store($directory, 'public');
+            }
+            unset($data[$file], $data[$clear]);
         }
 
         $result = $this->settingService->save($data);
-        $tab = $this->tabFrom($request);
+        if (array_key_exists('theme', $data) && ($site = CurrentSite::model()) && $site->theme) {
+            // 外观设置作为唯一入口，移除旧站点记录上的优先覆盖。
+            $site->theme = null;
+            $site->save();
+        }
+        $tab = $section ?: $this->tabFrom($request);
 
         return redirect()->route('admin.settings.edit', $tab === 'site' ? [] : ['tab' => $tab])
             ->with('status', $result['msg']);
@@ -121,7 +154,17 @@ class SettingController extends Controller
     {
         $tab = (string) $request->input('tab', $request->query('tab', 'site'));
 
-        return in_array($tab, ['site', 'look', 'interact', 'more'], true) ? $tab : 'site';
+        return SettingSections::normalize($tab);
+    }
+
+    public function maintenance(): View
+    {
+        abort_unless(auth('admin')->user()?->isSuperAdmin(), 403);
+
+        return view('admin.settings.maintenance', [
+            'backups' => $this->backups->list(),
+            'canSeedDemo' => app()->environment('local', 'testing'),
+        ]);
     }
 
     protected function sanitizeRobotsExtra(string $raw): string

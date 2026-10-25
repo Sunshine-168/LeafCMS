@@ -26,8 +26,8 @@
     <input type="hidden" name="{{ $name }}" id="{{ $uid }}_val" value="{{ $raw }}">
     <div class="cover-row" style="margin-bottom:8px">
         <input type="text" id="{{ $uid }}_addr" value="{{ $addr }}" placeholder="地址备注（可选）" style="flex:1">
-        <input type="text" id="{{ $uid }}_lng" value="{{ $lng }}" placeholder="经度" style="width:110px">
-        <input type="text" id="{{ $uid }}_lat" value="{{ $lat }}" placeholder="纬度" style="width:110px">
+        <input type="text" id="{{ $uid }}_lng" value="{{ $lng }}" placeholder="{{ admin_text('经度') }}" style="width:110px">
+        <input type="text" id="{{ $uid }}_lat" value="{{ $lat }}" placeholder="{{ admin_text('纬度') }}" style="width:110px">
         <button type="button" class="btn btn-muted" id="{{ $uid }}_apply">定位</button>
     </div>
     <div id="{{ $uid }}_map" style="height:280px;border:1px solid #e2e8f0;border-radius:8px"></div>

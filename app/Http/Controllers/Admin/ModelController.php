@@ -19,8 +19,7 @@ class ModelController extends Controller
         private readonly ModelFieldService $fieldService,
         private readonly ContentModelService $modelService,
         private readonly FieldBindService $fieldBind,
-    ) {
-    }
+    ) {}
 
     /** 内容模型与字段 */
     public function index(): View
@@ -29,6 +28,7 @@ class ModelController extends Controller
             'models' => ContentModel::query()
                 ->with(['fields.categories'])
                 ->withCount(['entries', 'categories'])
+                ->orderByDesc('is_active')
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get(),
@@ -93,6 +93,13 @@ class ModelController extends Controller
         );
     }
 
+    public function toggle(ContentModel $model): RedirectResponse
+    {
+        $result = $this->modelService->toggle($model);
+
+        return redirect()->route('admin.models.index')->with('status', $result['msg']);
+    }
+
     public function copy(ContentModel $model): RedirectResponse
     {
         $result = $this->modelService->copy($model);
@@ -127,7 +134,7 @@ class ModelController extends Controller
         $raw = file_get_contents($request->file('file')->getRealPath() ?: '');
         $payload = json_decode((string) $raw, true);
         if (! is_array($payload)) {
-            return back()->with('error', '无法解析 JSON');
+            return back()->with('error', admin_text('无法解析 JSON'));
         }
         $result = $this->modelService->importPayload($payload, $request->boolean('overwrite', true));
 

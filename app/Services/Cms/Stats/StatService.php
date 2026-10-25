@@ -134,7 +134,7 @@ class StatService
 
         return collect($grouped)
             ->take($limit)
-            ->map(fn (int $hits, string $host) => ['host' => $host, 'hits' => $hits])
+            ->map(fn (int $hits, string $host) => ['host' => admin_text($host), 'hits' => $hits])
             ->values();
     }
 
@@ -142,17 +142,17 @@ class StatService
     public function change(int $current, int $previous, string $label = '较昨日'): array
     {
         if ($previous === 0 && $current === 0) {
-            return ['text' => $label.'持平', 'dir' => 'flat', 'pct' => 0.0];
+            return ['text' => admin_text($label.'持平'), 'dir' => 'flat', 'pct' => 0.0];
         }
         if ($previous === 0) {
-            return ['text' => $label.'新增', 'dir' => 'up', 'pct' => 100.0];
+            return ['text' => admin_text($label.'新增'), 'dir' => 'up', 'pct' => 100.0];
         }
 
         $pct = round(($current - $previous) / $previous * 100, 1);
         $dir = $pct > 0 ? 'up' : ($pct < 0 ? 'down' : 'flat');
         $sign = $pct > 0 ? '+' : '';
 
-        return ['text' => $label.' '.$sign.$pct.'%', 'dir' => $dir, 'pct' => $pct];
+        return ['text' => admin_text($label).' '.$sign.$pct.'%', 'dir' => $dir, 'pct' => $pct];
     }
 
     /**
@@ -220,12 +220,12 @@ class StatService
 
         return [
             'devices' => collect($devices)
-                ->map(fn (int $hits, string $name) => ['name' => $name, 'hits' => $hits])
+                ->map(fn (int $hits, string $name) => ['name' => admin_text($name), 'hits' => $hits])
                 ->values()
                 ->all(),
             'browsers' => collect($browsers)
                 ->take(6)
-                ->map(fn (int $hits, string $name) => ['name' => $name, 'hits' => $hits])
+                ->map(fn (int $hits, string $name) => ['name' => admin_text($name), 'hits' => $hits])
                 ->values()
                 ->all(),
         ];
@@ -235,15 +235,15 @@ class StatService
     {
         $ref = trim((string) $referer);
         if ($ref === '') {
-            return '直接访问';
+            return admin_text('直接访问');
         }
         $host = strtolower((string) (parse_url($ref, PHP_URL_HOST) ?: ''));
         $appHost = strtolower((string) parse_url((string) config('app.url'), PHP_URL_HOST));
         if ($host === '') {
-            return '其他';
+            return admin_text('其他');
         }
         if ($appHost !== '' && $host === $appHost) {
-            return '站内跳转';
+            return admin_text('站内跳转');
         }
 
         return $host;
@@ -253,7 +253,7 @@ class StatService
     {
         $ua = (string) $ua;
         if ($ua === '') {
-            return '未知';
+            return admin_text('未知');
         }
         if (preg_match('/^curl\//i', $ua)) {
             return 'curl';
@@ -261,7 +261,7 @@ class StatService
         $browser = $this->guessBrowser($ua);
         $device = $this->guessDevice($ua);
 
-        return $browser.' · '.$device;
+        return admin_text($browser).' · '.admin_text($device);
     }
 
     public function isLocalProbe(?string $ip, ?string $ua): bool
@@ -292,7 +292,7 @@ class StatService
             'query' => $hit->query,
             'ip' => $hit->ip,
             'hash' => (string) $hit->visitor_hash,
-            'visitor' => $hit->is_spider ? ((string) ($hit->spider_name ?: 'Bot')) : '人类',
+            'visitor' => $hit->is_spider ? ((string) ($hit->spider_name ?: 'Bot')) : admin_text('人类'),
             'visitor_kind' => $hit->is_spider ? 'bot' : 'human',
             'referer' => $this->refererLabel($hit->referer),
             'client' => $this->clientLabel($ua),

@@ -42,7 +42,18 @@ class ContentModelService
         ]);
         $model->save();
 
-        return Result::ok($model, '模型已保存');
+        return Result::ok($model, admin_text('模型已保存'));
+    }
+
+    public function toggle(ContentModel $model): array
+    {
+        $model->is_active = ! $model->is_active;
+        $model->save();
+
+        return Result::ok(
+            $model,
+            $model->is_active ? '已显示，内容页会再出现这个标签' : '已隐藏，内容页不再出现这个标签'
+        );
     }
 
     public function delete(ContentModel $model): array
@@ -56,7 +67,7 @@ class ContentModelService
         $model->fields()->delete();
         $model->delete();
 
-        return Result::ok(null, '已删除');
+        return Result::ok(null, admin_text('已删除'));
     }
 
     /** 复制模型及其字段（不含内容） */

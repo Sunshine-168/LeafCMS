@@ -92,6 +92,6 @@ class FormSubmission extends Model
 
         $text = implode(' · ', array_slice($parts, 0, 2));
 
-        return $text !== '' ? \Illuminate\Support\Str::limit($text, $limit) : '（无内容）';
+        return $text !== '' ? \Illuminate\Support\Str::limit($text, $limit) : admin_text('（无内容）');
     }
 }

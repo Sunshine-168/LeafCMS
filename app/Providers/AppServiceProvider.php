@@ -6,10 +6,12 @@ use App\Models\Cms\Comment;
 use App\Models\Cms\Entry;
 use App\Models\Cms\FormSubmission;
 use App\Models\Cms\Setting;
+use App\Support\EscapingDatabaseEngine;
 use App\Services\Admin\DashboardService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Scout\EngineManager;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $scout = $this->app->make(EngineManager::class);
+        $scout->extend('database', fn () => new EscapingDatabaseEngine);
+        $scout->forgetEngines();
+
         Paginator::useBootstrapFour();
 
         Password::defaults(function () {

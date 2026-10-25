@@ -38,6 +38,40 @@ class Category extends Model
         return $this->belongsTo(ContentModel::class, 'model_id');
     }
 
+    /**
+     * 列表里的栏目名。安装时写入、且中文标题没改过的，按别名显示当前界面语言；改过的仍用库里的标题。
+     */
+    public function displayTitle(): string
+    {
+        $slug = trim((string) ($this->translation('slug', 'zh_cn') ?: $this->t('slug')));
+        $stored = trim((string) $this->translation('title', 'zh_cn'));
+        if ($slug !== '' && (self::seedTitles()[$slug] ?? null) === $stored) {
+            return admin_t('category_pack.'.$slug);
+        }
+
+        return trim((string) $this->uiTitle());
+    }
+
+    /** @return array<string, string> 栏目别名 => 安装时的中文标题 */
+    public static function seedTitles(): array
+    {
+        return [
+            'news' => '新闻中心',
+            'about' => '关于我们',
+            'products' => '产品中心',
+            'jobs' => '加入我们',
+            'downloads' => '下载中心',
+            'nav-tools' => '常用工具',
+            'nav-dev' => '开发资源',
+            'sources' => '源码市场',
+            'blog' => '博客',
+            'comics' => '漫画库',
+            'chapters' => '章节',
+            'matches' => '赛事信号',
+            'industry' => '行业资讯',
+        ];
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');

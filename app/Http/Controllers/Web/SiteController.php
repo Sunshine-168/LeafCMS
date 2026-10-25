@@ -7,12 +7,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Cms\Category;
 use App\Models\Cms\ContentModel;
 use App\Models\Cms\Entry;
+use App\Models\Cms\Setting;
 use App\Models\Cms\Tag;
 use App\Services\Cms\CommentService;
 use App\Services\Cms\FormSubmitService;
 use App\Services\Cms\SiteFrontService;
+use App\Services\Cms\SitemapService;
 use App\Services\Cms\TagAutoLinkService;
 use App\Support\Cdn;
+use App\Support\CurrentSite;
 use App\Support\Locale;
 use App\Support\OfficialNews;
 use Illuminate\Http\RedirectResponse;
@@ -43,21 +46,33 @@ class SiteController extends Controller
     }
 
     /** 产品官网：主题、安装说明、文档（/install 仍是安装向导） */
-    public function officialPage(string $page): View
+    public function officialPage(string $page): View|RedirectResponse
     {
         abort_unless(in_array($page, ['themes', 'guide', 'docs', 'open', 'news'], true), 404);
         $site = $this->site->bootSite();
+        if ($this->useOfficialPage($page)) {
+            return view($this->site->themeView('pages.'.$page), compact('site'));
+        }
 
-        return view($this->site->themeView('pages.'.$page), compact('site'));
+        return $this->category($page);
     }
 
-    public function officialNews(string $slug): View
+    public function officialNews(string $slug): View|RedirectResponse
     {
-        $post = OfficialNews::find($slug);
-        abort_unless($post !== null, 404);
         $site = $this->site->bootSite();
+        $post = OfficialNews::find($slug);
+        if ($post !== null && $this->useOfficialPage('news-show')) {
+            return view($this->site->themeView('pages.news-show'), compact('site', 'post'));
+        }
 
-        return view($this->site->themeView('pages.news-show'), compact('site', 'post'));
+        return $this->show('news', $slug);
+    }
+
+    /** 只有官方主题才占用 /news、/themes 这些地址，其它主题交给栏目和文章 */
+    private function useOfficialPage(string $page): bool
+    {
+        return (string) config('cms.theme') === 'official'
+            && view()->exists('themes.official.pages.'.$page);
     }
 
     /** 搜索（仅 is_searchable 模型；可按模型/栏目过滤） */
@@ -85,26 +100,26 @@ class SiteController extends Controller
 
         $results = collect();
         if ($q !== '') {
-            $locale = Locale::current();
-            $query = Entry::query()->with(['category', 'modelDef'])->published()->visibleToGuests()
-                ->whereHas('modelDef', function ($m) use ($modelId) {
-                    $m->where('is_searchable', true);
-                    if ($modelId) {
-                        $m->where('id', $modelId);
+            $siteId = (int) (CurrentSite::id() ?? 0);
+            $results = Entry::search($q)
+                ->where('site_id', $siteId)
+                ->where('status', 'published')
+                ->orderByDesc('published_at')
+                ->query(function ($query) use ($modelId, $categoryId, $siteId) {
+                    $query->with(['category', 'modelDef'])
+                        ->where($query->getModel()->getTable().'.site_id', $siteId)
+                        ->published()
+                        ->visibleToGuests()
+                        ->whereHas('modelDef', function ($m) use ($modelId) {
+                            $m->where('is_searchable', true);
+                            if ($modelId) {
+                                $m->where('id', $modelId);
+                            }
+                        });
+                    if ($categoryId) {
+                        $query->inCategories([$categoryId]);
                     }
                 })
-                ->where(function ($inner) use ($q, $locale) {
-                    $inner->where('search_text', 'like', "%{$q}%")
-                        ->orWhere("title->{$locale}", 'like', "%{$q}%")
-                        ->orWhere('title->'.Locale::default(), 'like', "%{$q}%")
-                        ->orWhere("excerpt->{$locale}", 'like', "%{$q}%");
-                });
-            if ($categoryId) {
-                $query->inCategories([$categoryId]);
-            }
-            $results = $query
-                ->orderByRaw('CASE WHEN search_text LIKE ? THEN 0 WHEN title LIKE ? THEN 1 ELSE 2 END', ["%{$q}%", "%{$q}%"])
-                ->orderByDesc('published_at')
                 ->paginate(12)
                 ->withQueryString();
             $this->context->setPaginator($results);
@@ -225,6 +240,8 @@ class SiteController extends Controller
                 $q->whereNull('preview_expires_at')->orWhere('preview_expires_at', '>', now());
             })
             ->firstOrFail();
+        $entry->overlayWorkingDraft();
+        $entry->unsetRelation('category');
         $category = $entry->category;
         abort_unless($category, 404);
 
@@ -376,7 +393,7 @@ class SiteController extends Controller
     public function sitemap(): Response
     {
         $this->site->bootSite();
-        $urls = app(\App\Services\Cms\SitemapService::class)->xmlItems();
+        $urls = app(SitemapService::class)->xmlItems();
         $xml = view($this->site->themeView('sitemap'), compact('urls'))->render();
 
         return response($xml, 200)
@@ -387,7 +404,7 @@ class SiteController extends Controller
     public function sitemapPage(): View
     {
         $site = $this->site->bootSite();
-        $svc = app(\App\Services\Cms\SitemapService::class);
+        $svc = app(SitemapService::class);
         abort_unless($svc->htmlEnabled(), 404);
         $groups = $svc->htmlGroups();
         $this->context->setSeo(cms_ui('sitemap').' - '.$site['title'], '', '');
@@ -402,7 +419,7 @@ class SiteController extends Controller
     public function robots(): Response
     {
         $this->site->bootSite();
-        $closed = (bool) (int) \App\Models\Cms\Setting::getValue('site_closed', '0');
+        $closed = (bool) (int) Setting::getValue('site_closed', '0');
         $lines = ['User-agent: *'];
         if ($closed) {
             $lines[] = 'Disallow: /';
@@ -413,10 +430,10 @@ class SiteController extends Controller
             $lines[] = 'Disallow: /member';
             $lines[] = 'Disallow: /preview';
         }
-        foreach (app(\App\Services\Cms\SitemapService::class)->robotsSitemapLines() as $line) {
+        foreach (app(SitemapService::class)->robotsSitemapLines() as $line) {
             $lines[] = $line;
         }
-        $extra = trim((string) \App\Models\Cms\Setting::getValue('robots_extra', ''));
+        $extra = trim((string) Setting::getValue('robots_extra', ''));
         if ($extra !== '' && ! $closed) {
             $known = array_map('strtolower', $lines);
             foreach (preg_split('/\R/', $extra) ?: [] as $line) {

@@ -63,7 +63,7 @@ class AdminLogService
      */
     public function paginate(array $filters, int $perPage = 20): LengthAwarePaginator
     {
-        $query = AdminLog::query()->orderByDesc('id');
+        $query = AdminLog::query()->with('adminUser')->orderByDesc('id');
         if ($filters['q'] !== '') {
             $like = '%'.addcslashes($filters['q'], '%_\\').'%';
             $query->where(function ($inner) use ($like) {
@@ -177,7 +177,7 @@ class AdminLogService
             'entries' => $pick(Entry::query()->withTrashed(), fn ($m) => $m->t('title')),
             'categories' => $pick(Category::query(), fn ($m) => $m->t('title')),
             'members' => $pick(Member::query(), fn ($m) => $m->name),
-            'admin-users' => $pick(AdminUser::query(), fn ($m) => $m->name),
+            'admin-users' => $pick(AdminUser::query(), fn ($m) => $m->displayName()),
             'sites' => $pick(Site::query(), fn ($m) => $m->name),
             'locales' => $pick(CmsLocale::query(), fn ($m) => $m->label ?: $m->native),
             'redirects' => $pick(Redirect::query(), fn ($m) => $m->source_path),
@@ -185,10 +185,10 @@ class AdminLogService
             'comments' => $pick(Comment::query()->withTrashed(), fn ($m) => $m->author_name ?: Str::limit(strip_tags((string) $m->content), 24)),
             'collectors' => $pick(Collector::query(), fn ($m) => $m->name),
             'menus' => $pick(Menu::query(), fn ($m) => $m->name),
-            'flags' => $pick(CmsFlag::query(), fn ($m) => $m->title),
+            'flags' => $pick(CmsFlag::query(), fn ($m) => $m->displayName()),
             'recommends' => $pick(Recommend::query(), fn ($m) => $m->title ?: $m->name),
             'models' => $pick(ContentModel::query(), fn ($m) => $m->name),
-            'roles' => $pick(AdminRole::query(), fn ($m) => $m->name),
+            'roles' => $pick(AdminRole::query(), fn ($m) => $m->displayName()),
             'member-groups' => $pick(MemberGroup::query(), fn ($m) => $m->name),
             'media' => $pick(Media::query(), fn ($m) => $m->filename),
             default => [],

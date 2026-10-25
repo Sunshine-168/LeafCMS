@@ -18,9 +18,14 @@ class AdminAuthenticate
         }
 
         $user = Auth::guard('admin')->user();
-        if ($user instanceof AdminUser) {
-            $user->loadMissing('adminRole');
+        if (! $user instanceof AdminUser || ! $user->is_active) {
+            Auth::guard('admin')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('admin.login');
         }
+        $user->loadMissing('adminRole');
 
         return $next($request);
     }

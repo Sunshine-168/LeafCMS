@@ -2,6 +2,7 @@
     $urls = $urls ?? [];
     $hl = $hl ?? fn (string $key, string $label) => e($label);
     $copy = admin_t('guide.copy');
+    $siteRoot = str_replace('\\', '/', rtrim(base_path(), '/\\'));
 @endphp
 <h2>Schedule and queues</h2>
 <p class="muted">Collectors and analytics prune do not run by themselves — the OS must wake Laravel every minute. PHP / nginx: <a href="{{ $urls['env'] ?? '#' }}">Environment</a>. Sources are in {!! $hl('collectors', 'Collectors') !!}; each one only fetches when its interval is due.</p>
@@ -16,7 +17,7 @@
         <tr><td>Analytics prune</td><td>03:20 daily</td><td>Deletes hits older than 90 days by default</td></tr>
     </tbody>
 </table>
-<p class="hint"><code>php artisan serve</code> or Docker for trying things out can skip this. A live site needs at least the cron line below, or collection only runs from the “Collect now” button.</p>
+<p class="hint"><code>php artisan serve</code> or Docker for trying things out can skip this. A live site needs at least the cron line below, or collection only runs from the “Collect now” button. On Baota, set the period to N minutes and enter 1. Do not paste <code>* * * * *</code> into the script box, and use <code>bin/php</code> rather than <code>php-fpm</code>. The click-by-click page is <a href="{{ $urls['baota'] ?? route('admin.help', ['topic' => 'baota']) }}">Baota</a>.</p>
 
 <h3>Modes</h3>
 <table class="help-doc">
@@ -40,9 +41,9 @@ CMS_STAT_PRUNE_MODE=schedule</code></pre>
 </div>
 <div class="code">
     <button type="button" class="copy" data-copy>{{ $copy }}</button>
-<pre><code>* * * * * cd /var/www/leafcms && php artisan schedule:run >> /dev/null 2>&amp;1</code></pre>
+<pre><code>* * * * * cd {{ $siteRoot }} && php artisan schedule:run >> /dev/null 2>&amp;1</code></pre>
 </div>
-<p class="hint">Replace the path with your project root. Linux: crontab. Windows: Task Scheduler, the same <code>php artisan schedule:run</code> every minute.</p>
+<p class="hint">The path in the command is this install's directory. Linux: crontab. Windows: Task Scheduler, the same <code>php artisan schedule:run</code> every minute.</p>
 
 <h3>Queue for large collects</h3>
 <div class="code">
@@ -57,7 +58,7 @@ QUEUE_CONNECTION=database</code></pre>
 <p class="muted">Do not use <code>QUEUE_CONNECTION=sync</code> or it still runs inline. Use <code>database</code> or Redis.</p>
 <div class="code">
     <button type="button" class="copy" data-copy>{{ $copy }}</button>
-<pre><code>* * * * * cd /var/www/leafcms && php artisan schedule:run >> /dev/null 2>&amp;1
+<pre><code>* * * * * cd {{ $siteRoot }} && php artisan schedule:run >> /dev/null 2>&amp;1
 php artisan queue:work --queue=cms --sleep=1 --tries=1</code></pre>
 </div>
 <p class="hint">The second line must stay up (systemd / supervisor). If it dies, collect and prune stop.</p>
@@ -69,8 +70,8 @@ php artisan queue:work --queue=cms --sleep=1 --tries=1</code></pre>
 </div>
 <div class="code">
     <button type="button" class="copy" data-copy>{{ $copy }}</button>
-<pre><code>* * * * * cd /var/www/leafcms && php artisan cms:collect --sync
-20 3 * * * cd /var/www/leafcms && php artisan cms:stat-prune --days=90 --sync</code></pre>
+<pre><code>* * * * * cd {{ $siteRoot }} && php artisan cms:collect --sync
+20 3 * * * cd {{ $siteRoot }} && php artisan cms:stat-prune --days=90 --sync</code></pre>
 </div>
 <p class="muted">Queue mode: replace <code>--sync</code> with <code>--queue</code> and keep <code>queue:work --queue=cms</code>.</p>
 

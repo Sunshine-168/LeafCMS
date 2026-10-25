@@ -121,7 +121,7 @@ class CollectorController extends Controller
 
             return redirect()->route('admin.collectors.index')->with(
                 'status',
-                '已交给后台队列，稍候可在运行日志里看结果：'.$collector->name
+                admin_text('已交给后台队列，稍候可在运行日志里看结果：:name', ['name' => $collector->name])
             );
         }
 

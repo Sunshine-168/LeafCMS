@@ -4,15 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>安装 CMS</title>
+    <title>安装 LeafCMS</title>
+    <link rel="icon" href="{{ asset('assets/brand/logo.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="{{ asset('assets/css/install.css') }}?v=2">
 </head>
 <body>
 <div class="wrap">
-    <div class="brand"><span class="logo">C</span> CMS 安装向导</div>
+    <div class="brand"><img class="logo" src="{{ asset('assets/brand/logo.svg') }}" alt="" width="32" height="32"> LeafCMS 安装向导</div>
     <nav class="ways" aria-label="安装方式">
         <a class="{{ ($way ?? 'web') === 'web' ? 'is-on' : '' }}" href="{{ route('install', ['way' => 'web']) }}">网页安装</a>
-        <a class="{{ ($way ?? 'web') === 'laravel' ? 'is-on' : '' }}" href="{{ route('install', ['way' => 'laravel']) }}">Laravel 命令行</a>
+        <a class="{{ ($way ?? 'web') === 'baota' ? 'is-on' : '' }}" href="{{ route('install', ['way' => 'baota']) }}">宝塔配置</a>
+        <a class="{{ ($way ?? 'web') === 'laravel' ? 'is-on' : '' }}" href="{{ route('install', ['way' => 'laravel']) }}">Shell</a>
         <a class="{{ ($way ?? 'web') === 'docker' ? 'is-on' : '' }}" href="{{ route('install', ['way' => 'docker']) }}">Docker</a>
         <a class="{{ ($way ?? 'web') === 'deploy' ? 'is-on' : '' }}" href="{{ route('install', ['way' => 'deploy']) }}">上线部署</a>
     </nav>
@@ -20,7 +22,7 @@
     <div class="card">
         <aside class="rail">
             <h1>三步即可用</h1>
-            <p class="lead">检查环境、选好数据库、创建管理员。装好就能进后台。</p>
+            <p class="lead">检查环境、选好数据库、创建管理员。装好就能进后台。用宝塔的话，先看 <a href="{{ route('install', ['way' => 'baota']) }}">宝塔图解</a>。</p>
             <ol class="steps" id="installSteps">
                 <li class="is-on" data-step="0"><span class="n">1</span><span>环境检查</span></li>
                 <li data-step="1"><span class="n">2</span><span>数据库</span></li>
@@ -135,6 +137,8 @@
             </form>
         </div>
     </div>
+    @elseif(($way ?? 'web') === 'baota')
+        @include('admin.help._baota')
     @elseif(($way ?? 'web') === 'laravel')
         @include('install._laravel')
     @elseif(($way ?? 'web') === 'docker')

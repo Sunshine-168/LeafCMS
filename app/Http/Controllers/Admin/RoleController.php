@@ -12,9 +12,7 @@ use Illuminate\View\View;
 
 class RoleController extends Controller
 {
-    public function __construct(private readonly RoleAdminService $roles)
-    {
-    }
+    public function __construct(private readonly RoleAdminService $roles) {}
 
     public function index(): View
     {
@@ -97,8 +95,8 @@ class RoleController extends Controller
     private function messages(): array
     {
         return [
-            'name.required' => '请填写名称',
-            'slug.unique' => '这个标识码已经有了',
+            'name.required' => admin_text('请填写名称'),
+            'slug.unique' => admin_text('这个标识码已经有了'),
         ];
     }
 }

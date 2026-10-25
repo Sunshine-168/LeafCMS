@@ -7,6 +7,13 @@
         <h2>用 Laravel 命令行安装</h2>
         <p class="muted">适合本机已有 PHP 8.4+ 和 Composer 的情况。默认用 SQLite，不用另装数据库。</p>
 
+        <h3>一条命令</h3>
+        <div class="code">
+            <button type="button" class="copy" data-copy>复制</button>
+            <pre><code>bash install.sh</code></pre>
+        </div>
+        <p class="hint">Windows：<code>powershell -ExecutionPolicy Bypass -File .\install.ps1</code>。不写密码时，邮箱是 <code>admin@example.com</code>，密码是 <code>Admin@12345</code>。上线后请改掉。自己传密码：<code>bash install.sh '你的密码'</code>，至少 8 位。用宝塔的话先看 <a href="{{ route('install', ['way' => 'baota']) }}">宝塔图解</a>。</p>
+
         <h3>1. 准备代码</h3>
         <div class="code">
             <button type="button" class="copy" data-copy>复制</button>

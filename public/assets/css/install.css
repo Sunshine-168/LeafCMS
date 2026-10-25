@@ -56,15 +56,12 @@ body {
     border-color: var(--primary);
     color: #fff;
 }
-.logo {
+.brand .logo {
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    background: var(--primary);
-    color: #fff;
-    display: grid;
-    place-items: center;
-    font-size: 14px;
+    display: block;
+    flex-shrink: 0;
 }
 .card {
     display: grid;
@@ -214,6 +211,9 @@ input:focus { outline: 2px solid #cfe3ff; border-color: var(--primary); }
     font-size: 28px;
 }
 .done h1 { margin: 0 0 8px; font-size: 22px; }
+.done .install-next { text-align: left; margin: 22px auto 0; max-width: 640px; }
+.done .install-next h2 { margin: 0 0 8px; font-size: 16px; }
+.done .install-next p { margin: 0 0 10px; }
 .done .btns { display: flex; gap: 10px; justify-content: center; margin-top: 22px; flex-wrap: wrap; }
 .done .btns a { text-decoration: none; }
 .card.guide {

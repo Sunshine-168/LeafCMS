@@ -54,13 +54,13 @@ class CmsForm extends Model
     {
         $n = count($this->fields ?? []);
 
-        return $n > 0 ? $n.' 个字段' : '还没有字段';
+        return $n > 0 ? admin_text(':count 个字段', ['count' => $n]) : admin_text('还没有字段');
     }
 
     public function inboxCount(): string
     {
         $n = (int) ($this->submissions_count ?? 0);
 
-        return $n > 0 ? $n.' 条' : '还没有留言';
+        return $n > 0 ? admin_text(':count 条', ['count' => $n]) : admin_text('还没有留言');
     }
 }

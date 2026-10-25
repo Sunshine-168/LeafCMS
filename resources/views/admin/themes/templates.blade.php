@@ -1,5 +1,5 @@
 @extends('admin.layout')
-@section('title', '编辑模板 · '.$theme['name'])
+@section('title', admin_text('编辑模板 · :name', ['name' => $theme['name']]))
 @section('icon', 'code')
 @section('fullwidth', true)
 @php
@@ -22,16 +22,31 @@
     <div class="card card-panel">
         <div class="card-header"><span>{{ $theme['name'] }}</span></div>
         <div class="card-body">
+            @php
+                $tplLead = e(admin_text('改这一套的 Blade。绿色是 Blade，橙色是 @@cms。Logo 和主色在 :look，短句在 :setup。'));
+                $tplLead = str_replace(
+                    [':look', ':setup'],
+                    [
+                        '<a href="'.e(route('admin.settings.edit', ['tab' => 'look'])).'">'.e(admin_text('设置 → 外观')).'</a>',
+                        '<a href="'.e(route('admin.themes.show', $theme['slug'])).'">'.e(admin_text('配置')).'</a>',
+                    ],
+                    $tplLead
+                );
+            @endphp
             <p class="muted recycle-lead">
-                改这一套的 Blade。绿色是 Blade，橙色是 <code>@@cms</code>。Logo 和主色在「<a href="{{ route('admin.settings.edit', ['tab' => 'look']) }}">设置 → 外观</a>」，短句在「<a href="{{ route('admin.themes.show', $theme['slug']) }}">配置</a>」。
+                {!! $tplLead !!}
                 @if($writable)
-                    Ctrl+S 直接保存，Ctrl+F 查找。
+                    {{ admin_text('Ctrl+S 直接保存，Ctrl+F 查找。') }}
                 @else
-                    自带主题只读，请先<a href="{{ route('admin.themes.index', ['add' => 'copy']) }}">复制一套</a>再改。
+                    @php
+                        $tplLock = e(admin_text('自带主题只读，请先 :copy 再改。'));
+                        $tplLock = str_replace(':copy', '<a href="'.e(route('admin.themes.index', ['add' => 'copy'])).'">'.e(admin_text('复制一套')).'</a>', $tplLock);
+                    @endphp
+                    {!! $tplLock !!}
                 @endif
             </p>
             @if($hasFiles)
-                <input type="search" id="tpl-search" class="tpl-search" placeholder="搜页面，如 首页、登录" autocomplete="off" aria-label="搜索模板">
+                <input type="search" id="tpl-search" class="tpl-search" placeholder="{{ admin_text('搜页面，如 首页、登录') }}" autocomplete="off" aria-label="{{ admin_text('搜索模板') }}">
                 <div class="file-list" id="tpl-files">
                     @foreach($groups as $group)
                         <div class="tpl-group" data-group>
@@ -45,36 +60,36 @@
                         </div>
                     @endforeach
                 </div>
-                <p class="muted" id="tpl-filter-empty" hidden>没有匹配的页面。</p>
+                <p class="muted" id="tpl-filter-empty" hidden>{{ admin_text('没有匹配的页面。') }}</p>
             @else
                 <div class="list-empty">
-                    <p>这个主题还没有可改的页面。</p>
-                    <p class="muted">把 Blade 文件放到 <code>resources/views/themes/{{ $theme['slug'] }}</code>。</p>
+                    <p>{{ admin_text('这个主题还没有可改的页面。') }}</p>
+                    <p class="muted">{{ admin_text('把 Blade 文件放到') }} <code>resources/views/themes/{{ $theme['slug'] }}</code>。</p>
                 </div>
             @endif
         </div>
     </div>
     <div class="card card-panel">
         <div class="card-header">
-            <span id="tpl-title">模板</span>
+            <span id="tpl-title">{{ admin_text('模板') }}</span>
             <div>
-                <a class="btn btn-muted btn-sm" href="{{ route('admin.themes.show', $theme['slug']) }}">配置</a>
+                <a class="btn btn-muted btn-sm" href="{{ route('admin.themes.show', $theme['slug']) }}">{{ admin_text('配置') }}</a>
                 <a class="btn btn-muted btn-sm" href="{{ route('admin.themes.index') }}">{{ admin_back('themes') }}</a>
-                <button type="button" class="btn btn-muted btn-sm" id="tpl-find" hidden title="Ctrl+F">查找</button>
-                <button type="button" class="btn btn-muted btn-sm" id="tpl-attach">插入附件</button>
-                <button type="button" class="btn btn-muted btn-sm" id="tpl-rollback" disabled>回滚</button>
-                <button type="button" class="btn btn-muted btn-sm" id="tpl-backup" disabled>备份</button>
-                <button type="button" class="btn btn-sm" id="tpl-save" disabled>保存</button>
+                <button type="button" class="btn btn-muted btn-sm" id="tpl-find" hidden title="Ctrl+F">{{ admin_text('查找') }}</button>
+                <button type="button" class="btn btn-muted btn-sm" id="tpl-attach">{{ admin_text('插入附件') }}</button>
+                <button type="button" class="btn btn-muted btn-sm" id="tpl-rollback" disabled>{{ admin_text('回滚') }}</button>
+                <button type="button" class="btn btn-muted btn-sm" id="tpl-backup" disabled>{{ admin_text('备份') }}</button>
+                <button type="button" class="btn btn-sm" id="tpl-save" disabled>{{ admin_text('保存') }}</button>
             </div>
         </div>
         <div class="card-body">
             <p class="muted field-hint" id="tpl-meta">
-                <span id="tpl-meta-main">从左边点一个页面开始改。保存会先备份，改错了可以回滚。</span>
+                <span id="tpl-meta-main">{{ admin_text('从左边点一个页面开始改。保存会先备份，改错了可以回滚。') }}</span>
                 <span id="tpl-meta-pos" class="tpl-meta-pos" hidden></span>
             </p>
             <div class="list-empty" id="tpl-empty">
-                <p>还没有打开文件。</p>
-                <p class="muted">先点「首页」或「整站头尾」。这是 Blade 模板，不是可视化排版。需要图片时点「插入附件」。</p>
+                <p>{{ admin_text('还没有打开文件。') }}</p>
+                <p class="muted">{{ admin_text('先点「首页」或「整站头尾」。这是 Blade 模板，不是可视化排版。需要图片时点「插入附件」。') }}</p>
             </div>
             <textarea id="tpl-content" class="tpl-editor" hidden spellcheck="false"></textarea>
         </div>
@@ -85,13 +100,29 @@
 
 @push('scripts')
 @include('admin.themes._editor-scripts')
+@php
+    $tplStrings = collect([
+        ':line 行 :col 列', '模板', '上次备份 :time', '还没有备份',
+        '当前文件还没保存，换过去会丢掉改动。确定？', '读取失败', '高亮没加上，已用文本框打开',
+        '自带主题请先复制一套再改', '请先选一个页面', '保存会覆盖这个页面，并先做一份备份。确定？',
+        '完成', '保存失败', '已复制，打开页面后可粘贴到光标处', '已插入', '媒体选择器没加载',
+        '请拖入 jpg / png / gif / webp 图片', '上传失败',
+        '回到最近一次备份？现在编辑器里没保存的改动会丢掉。',
+    ])->mapWithKeys(fn ($key) => [$key => admin_text($key)])->all();
+    $tplReadUrl = route('admin.themes.templates.read', $theme['slug']);
+    $tplSaveUrl = route('admin.themes.templates.save', $theme['slug']);
+    $tplBackupUrl = route('admin.themes.templates.backup', $theme['slug']);
+    $tplRollbackUrl = route('admin.themes.templates.rollback', $theme['slug']);
+@endphp
 <script>
 (function () {
+    var T = @json($tplStrings);
+    function tr(key) { return T[key] || key; }
     var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-    var readUrl = @json(route('admin.themes.templates.read', $theme['slug']));
-    var saveUrl = @json(route('admin.themes.templates.save', $theme['slug']));
-    var backupUrl = @json(route('admin.themes.templates.backup', $theme['slug']));
-    var rollbackUrl = @json(route('admin.themes.templates.rollback', $theme['slug']));
+    var readUrl = @json($tplReadUrl);
+    var saveUrl = @json($tplSaveUrl);
+    var backupUrl = @json($tplBackupUrl);
+    var rollbackUrl = @json($tplRollbackUrl);
     var writable = @json($writable);
     var current = '';
     var saved = '';
@@ -175,7 +206,7 @@
     function cursorBit() {
         if (!code || !current) return '';
         var c = code.cursor();
-        return (c.line + 1) + '行 ' + (c.ch + 1) + '列';
+        return tr(':line 行 :col 列').replace(':line', String(c.line + 1)).replace(':col', String(c.ch + 1));
     }
     function paintPos() {
         var pos = cursorBit();
@@ -183,7 +214,7 @@
         metaPos.textContent = pos;
     }
     function updateChrome() {
-        var label = (document.querySelector('.tpl-file.active') || {}).getAttribute('data-label') || current || '模板';
+        var label = (document.querySelector('.tpl-file.active') || {}).getAttribute('data-label') || current || tr('模板');
         titleEl.textContent = label + (dirty() ? ' *' : '');
         saveBtn.disabled = !writable || !current || !dirty();
         backupBtn.disabled = !writable || !current;
@@ -193,8 +224,8 @@
     function setMeta(path, bak) {
         backupAt = parseInt(bak, 10) || 0;
         var bits = [path];
-        if (backupAt) bits.push('上次备份 ' + fmtTime(backupAt));
-        else bits.push('还没有备份');
+        if (backupAt) bits.push(tr('上次备份 :time').replace(':time', fmtTime(backupAt)));
+        else bits.push(tr('还没有备份'));
         metaMain.textContent = bits.join(' · ');
         paintPos();
         updateChrome();
@@ -224,12 +255,12 @@
             else editor.focus();
             return;
         }
-        if (current && dirty() && !confirm('当前文件还没保存，换过去会丢掉改动。确定？')) return;
+        if (current && dirty() && !confirm(tr('当前文件还没保存，换过去会丢掉改动。确定？'))) return;
         var seq = ++loadSeq;
         json(readUrl + (readUrl.indexOf('?') >= 0 ? '&' : '?') + 'path=' + encodeURIComponent(path)).then(function (res) {
             if (seq !== loadSeq) return;
             if (!res || !res.ok) {
-                toast((res && res.msg) || '读取失败', false);
+                toast((res && res.msg) || tr('读取失败'), false);
                 return;
             }
             var raw = (res.data && res.data.content) || '';
@@ -242,7 +273,7 @@
             } catch (err) {
                 editor.hidden = false;
                 editor.value = saved;
-                toast('高亮没加上，已用文本框打开', false);
+                toast(tr('高亮没加上，已用文本框打开'), false);
             }
             markActive(path);
             setMeta(path, res.data && res.data.backup_at);
@@ -253,7 +284,7 @@
             updateChrome();
         }).catch(function () {
             if (seq !== loadSeq) return;
-            toast('读取失败', false);
+            toast(tr('读取失败'), false);
         });
     }
     document.querySelectorAll('.tpl-file').forEach(function (a) {
@@ -314,15 +345,15 @@
 
     function saveFile(quiet) {
         if (!writable) {
-            toast('自带主题请先复制一套再改', false);
+            toast(tr('自带主题请先复制一套再改'), false);
             return;
         }
         if (!current) {
-            if (!quiet) toast('请先选一个页面', false);
+            if (!quiet) toast(tr('请先选一个页面'), false);
             return;
         }
         if (!dirty() || saving) return;
-        if (!quiet && !confirm('保存会覆盖这个页面，并先做一份备份。确定？')) return;
+        if (!quiet && !confirm(tr('保存会覆盖这个页面，并先做一份备份。确定？'))) return;
         saving = true;
         var payload = encode(getContent());
         var snap = normalize(payload);
@@ -331,9 +362,9 @@
                 saved = snap;
                 setMeta(current, res.data && res.data.backup_at);
             }
-            toast((res && res.msg) || '完成', !!(res && res.ok));
+            toast((res && res.msg) || tr('完成'), !!(res && res.ok));
         }).catch(function () {
-            toast('保存失败', false);
+            toast(tr('保存失败'), false);
         }).then(function () { saving = false; });
     }
     document.getElementById('tpl-save').addEventListener('click', function () { saveFile(false); });
@@ -362,13 +393,13 @@
         if (!text) return;
         if (!current) {
             copyText(text);
-            toast('已复制，打开页面后可粘贴到光标处', true);
+            toast(tr('已复制，打开页面后可粘贴到光标处'), true);
             return;
         }
         if (code) {
             code.insert(text);
             updateChrome();
-            toast('已插入', true);
+            toast(tr('已插入'), true);
             return;
         }
         editor.focus();
@@ -378,7 +409,7 @@
         editor.value = val.slice(0, start) + text + val.slice(end);
         editor.selectionStart = editor.selectionEnd = start + text.length;
         editor.dispatchEvent(new Event('input'));
-        toast('已插入', true);
+        toast(tr('已插入'), true);
     }
     function bindDrop(el, onFiles) {
         if (!el) return;
@@ -397,14 +428,14 @@
     }
     function uploadFiles(files) {
         if (!window.CmsEditor) {
-            toast('媒体选择器没加载', false);
+            toast(tr('媒体选择器没加载'), false);
             return;
         }
         var list = Array.prototype.filter.call(files || [], function (f) {
             return f && (f.type || '').indexOf('image/') === 0;
         });
         if (!list.length) {
-            toast('请拖入 jpg / png / gif / webp 图片', false);
+            toast(tr('请拖入 jpg / png / gif / webp 图片'), false);
             return;
         }
         var chain = Promise.resolve();
@@ -416,12 +447,12 @@
             });
         });
         chain.catch(function (err) {
-            toast((err && err.message) || '上传失败', false);
+            toast((err && err.message) || tr('上传失败'), false);
         });
     }
     document.getElementById('tpl-attach').addEventListener('click', function () {
         if (!window.CmsEditor) {
-            toast('媒体选择器没加载', false);
+            toast(tr('媒体选择器没加载'), false);
             return;
         }
         window.CmsEditor.openPicker(function (url) {
@@ -430,15 +461,15 @@
     });
     bindDrop(code ? code.wrap : editor, uploadFiles);
     document.getElementById('tpl-backup').addEventListener('click', function () {
-        if (!writable || !current) { toast('请先选一个页面', false); return; }
+        if (!writable || !current) { toast(tr('请先选一个页面'), false); return; }
         json(backupUrl, { method: 'POST', body: { path: current } }).then(function (res) {
             if (res && res.ok) setMeta(current, res.data && res.data.backup_at);
-            toast((res && res.msg) || '完成', !!(res && res.ok));
+            toast((res && res.msg) || tr('完成'), !!(res && res.ok));
         });
     });
     document.getElementById('tpl-rollback').addEventListener('click', function () {
-        if (!writable || !current) { toast('请先选一个页面', false); return; }
-        if (!confirm('回到最近一次备份？现在编辑器里没保存的改动会丢掉。')) return;
+        if (!writable || !current) { toast(tr('请先选一个页面'), false); return; }
+        if (!confirm(tr('回到最近一次备份？现在编辑器里没保存的改动会丢掉。'))) return;
         json(rollbackUrl, { method: 'POST', body: { path: current } }).then(function (res) {
             if (res && res.ok) {
                 json(readUrl + (readUrl.indexOf('?') >= 0 ? '&' : '?') + 'path=' + encodeURIComponent(current)).then(function (r) {
@@ -449,7 +480,7 @@
                     }
                 });
             }
-            toast((res && res.msg) || '完成', !!(res && res.ok));
+            toast((res && res.msg) || tr('完成'), !!(res && res.ok));
         });
     });
 

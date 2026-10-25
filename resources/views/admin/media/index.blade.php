@@ -29,10 +29,10 @@
             @csrf
             <input type="hidden" name="keep_q" value="{{ $q }}">
             <input type="hidden" name="keep_type" value="{{ $type }}">
-            <label class="media-drop-label">上传文件</label>
-            <div class="media-drop-zone" id="mediaDropZone" tabindex="0" role="button" aria-label="点击或拖入文件">
-                <strong>点击或拖入文件</strong>
-                <span class="muted">图片、文档都可以，单个不超过 10 MB，可一次多个</span>
+            <label class="media-drop-label">{{ admin_text('上传文件') }}</label>
+            <div class="media-drop-zone" id="mediaDropZone" tabindex="0" role="button" aria-label="{{ admin_text('点击或拖入文件') }}">
+                <strong>{{ admin_text('点击或拖入文件') }}</strong>
+                <span class="muted">{{ admin_text('图片、文档都可以，单个不超过 10 MB，可一次多个') }}</span>
                 <input type="file" name="files[]" id="mediaFiles" multiple hidden>
             </div>
         </form>
@@ -41,24 +41,24 @@
             @if($type !== '')
                 <input type="hidden" name="type" value="{{ $type }}">
             @endif
-            <input type="search" name="q" value="{{ $q }}" placeholder="搜索文件名或说明" aria-label="搜索媒体">
-            <button class="btn btn-muted" type="submit">搜索</button>
-            <a class="chip {{ $type === '' ? 'active' : '' }}" href="{{ $qs(['type' => null]) }}">全部</a>
-            <a class="chip {{ $type === 'image' ? 'active' : '' }}" href="{{ $qs(['type' => 'image']) }}">图片</a>
-            <a class="chip {{ $type === 'file' ? 'active' : '' }}" href="{{ $qs(['type' => 'file']) }}">文件</a>
+            <input type="search" name="q" value="{{ $q }}" placeholder="{{ admin_text('搜索文件名或说明') }}" aria-label="{{ admin_text('搜索媒体') }}">
+            <button class="btn btn-muted" type="submit">{{ admin_text('搜索') }}</button>
+            <a class="chip {{ $type === '' ? 'active' : '' }}" href="{{ $qs(['type' => null]) }}">{{ admin_text('全部') }}</a>
+            <a class="chip {{ $type === 'image' ? 'active' : '' }}" href="{{ $qs(['type' => 'image']) }}">{{ admin_text('图片') }}</a>
+            <a class="chip {{ $type === 'file' ? 'active' : '' }}" href="{{ $qs(['type' => 'file']) }}">{{ admin_text('文件') }}</a>
             @if($hasFilters)
-                <a class="chip" href="{{ route('admin.media.index') }}">清除筛选</a>
+                <a class="chip" href="{{ route('admin.media.index') }}">{{ admin_text('清除筛选') }}</a>
             @endif
         </form>
 
         @if($media->isEmpty())
             <div class="list-empty">
                 @if($hasFilters)
-                    <p>没有符合条件的文件。</p>
-                    <a class="btn btn-muted" href="{{ route('admin.media.index') }}">清除筛选</a>
+                    <p>{{ admin_text('没有符合条件的文件。') }}</p>
+                    <a class="btn btn-muted" href="{{ route('admin.media.index') }}">{{ admin_text('清除筛选') }}</a>
                 @else
-                    <p>还没有文件。</p>
-                    <p class="muted">拖到上方或点击上传。写内容时封面和正文里也可以直接传图。</p>
+                    <p>{{ admin_text('还没有文件。') }}</p>
+                    <p class="muted">{{ admin_text('拖到上方或点击上传。写内容时封面和正文里也可以直接传图。') }}</p>
                 @endif
             </div>
         @else
@@ -81,18 +81,18 @@
                                 @endif
                             </div>
                             <div class="media-card-actions">
-                                <button type="button" class="btn btn-sm btn-muted" data-copy="{{ $item->url() }}">复制链接</button>
-                                <a class="btn btn-sm btn-muted" href="{{ $item->url() }}" target="_blank" rel="noopener">打开</a>
-                                <form action="{{ route('admin.media.destroy', $item) }}" method="post" onsubmit="return confirm(@json('确定删除「'.$item->filename.'」？内容里已插入的地址不会自动去掉。'))">
+                                <button type="button" class="btn btn-sm btn-muted" data-copy="{{ $item->url() }}">{{ admin_text('复制链接') }}</button>
+                                <a class="btn btn-sm btn-muted" href="{{ $item->url() }}" target="_blank" rel="noopener">{{ admin_text('打开') }}</a>
+                                <form action="{{ route('admin.media.destroy', $item) }}" method="post" onsubmit="return confirm(@js(admin_text('确定删除「:name」？内容里已插入的地址不会自动去掉。', ['name' => $item->filename])))">
                                     @csrf @method('DELETE')
-                                    <button class="btn-quiet" type="submit">删除</button>
+                                    <button class="btn-quiet" type="submit">{{ admin_text('删除') }}</button>
                                 </form>
                             </div>
                         </div>
                     </article>
                 @endforeach
             </div>
-            <p class="muted entry-index-count">共 {{ $media->total() }} 个</p>
+            <p class="muted entry-index-count">{{ admin_text('共 :count 个', ['count' => $media->total()]) }}</p>
             {{ $media->links() }}
         @endif
     </div>
@@ -129,13 +129,13 @@
         var url = btn.getAttribute('data-copy') || '';
         var done = function () {
             var old = btn.textContent;
-            btn.textContent = '已复制';
+            btn.textContent = @json(admin_text('已复制'));
             setTimeout(function () { btn.textContent = old; }, 1200);
         };
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(done).catch(function () { window.prompt('复制链接', url); });
+            navigator.clipboard.writeText(url).then(done).catch(function () { window.prompt(@json(admin_text('复制链接')), url); });
         } else {
-            window.prompt('复制链接', url);
+            window.prompt(@json(admin_text('复制链接')), url);
         }
     });
 })();

@@ -1,8 +1,14 @@
 @php
     $urls = $urls ?? [];
     $hl = $hl ?? fn (string $key, string $label) => e($label);
+    $settingsLink = static function (string $tab, string $label) use ($urls): string {
+        return !empty($urls['settings'])
+            ? '<a href="'.e(route('admin.settings.edit', ['tab' => $tab])).'">'.e($label).'</a>'
+            : e($label);
+    };
 @endphp
-<p class="muted">The <strong>theme</strong> decides how the site looks. <strong>Content models</strong> decide fields on sections and entries. See <a href="{{ $urls['helpAdmin'] ?? '#' }}">Admin</a> for each sidebar item, <a href="{{ $urls['helpThemes'] ?? '#' }}">Themes</a> to switch skins, <a href="{{ $urls['theme'] ?? '#' }}">Templates</a> for Blade files, and <a href="{{ $urls['tags'] ?? '#' }}">Tags</a> for data tags.</p>
+<p class="muted">LeafCMS is the site builder I wrote with Laravel. The license is MIT. The <strong>theme</strong> decides how the site looks. <strong>Content models</strong> decide the fields. There is no app store and no online upgrade. This guide says the same things as the README.</p>
+<p class="muted">See <a href="{{ $urls['helpAdmin'] ?? '#' }}">Admin</a> for each sidebar item, <a href="{{ $urls['helpThemes'] ?? '#' }}">Themes</a> to switch skins, <a href="{{ $urls['theme'] ?? '#' }}">Templates</a> for Blade files, and <a href="{{ $urls['tags'] ?? '#' }}">Tags</a> for data tags. On an empty site, do not start by editing templates. Get one page online and publish one entry first.</p>
 
 <div class="help-jumps">
     @if(!empty($urls['settings']))
@@ -39,9 +45,9 @@
         <tr><th>Area</th><th>What you do</th></tr>
     </thead>
     <tbody>
-        <tr><td>Content</td><td>{!! $hl('categories', 'Sections') !!}, {!! $hl('entries', 'entries') !!}, {!! $hl('entryTags', 'tags') !!}, {!! $hl('media', 'media') !!}, {!! $hl('submissions', 'inbox') !!}, {!! $hl('comments', 'comments') !!}. More has {!! $hl('flags', 'flags') !!}, {!! $hl('recommends', 'blocks') !!}, {!! $hl('models', 'models') !!}, {!! $hl('menus', 'menus') !!}, {!! $hl('forms', 'forms') !!}, and {!! $hl('recycle', 'trash') !!}.</td></tr>
-        <tr><td>Operations</td><td>{!! $hl('members', 'Members') !!}, {!! $hl('collectors', 'collectors') !!}, {!! $hl('cache', 'cache') !!} (page cache and disk HTML). More has {!! $hl('friendLinks', 'friend links') !!}, {!! $hl('sitemap', 'Sitemap') !!}, {!! $hl('redirects', 'redirects') !!}, and {!! $hl('groups', 'groups') !!}.</td></tr>
-        <tr><td>System</td><td>{!! $hl('sites', 'Sites') !!}, {!! $hl('settings', 'Settings') !!}, {!! $hl('themes', 'themes') !!}, languages, logs, admins, roles, and this help. Help stays here so accounts without operations rights can still open it.</td></tr>
+        <tr><td>Content</td><td>{!! $hl('categories', 'Sections') !!}, {!! $hl('entries', 'entries') !!}, {!! $hl('entryTags', 'tags') !!}, {!! $hl('media', 'media') !!}, {!! $hl('submissions', 'inbox') !!}, {!! $hl('comments', 'comments') !!}. The Content setup group contains {!! $hl('flags', 'flags') !!}, {!! $hl('recommends', 'blocks') !!}, {!! $hl('models', 'models') !!}, {!! $hl('menus', 'menus') !!}, {!! $hl('forms', 'forms') !!}, and {!! $hl('recycle', 'trash') !!}.</td></tr>
+        <tr><td>Operations</td><td>{!! $hl('members', 'Members') !!}, {!! $hl('collectors', 'collectors') !!}, {!! $hl('cache', 'cache') !!} (page cache and disk HTML). The Operations tools group contains {!! $hl('friendLinks', 'friend links') !!}, {!! $hl('sitemap', 'Sitemap') !!}, {!! $hl('redirects', 'redirects') !!}, and {!! $hl('groups', 'groups') !!}.</td></tr>
+        <tr><td>System</td><td>{!! $hl('settings', 'Settings') !!}, {!! $hl('themes', 'themes') !!}, languages, logs, admins, roles, and this help. Help stays here so accounts without operations rights can still open it.</td></tr>
     </tbody>
 </table>
 
@@ -53,14 +59,14 @@
 <h3>Menus, blocks, forms</h3>
 <p class="muted">If a section is marked “menu”, and the theme’s <code>@@cmsMenu</code> has no menu yet, those sections become the header. For exact order, build a header menu in {!! $hl('menus', 'Menus') !!}.</p>
 <p class="muted">Home banners and “latest news” blocks use {!! $hl('recommends', 'Blocks') !!}. The identifier must match the template <code>name</code>, for example <code>home_banner</code>. Hand-filled items can pick an image from the media library and preview it; output it with <code>cms_media($item-&gt;image)</code>.</p>
-<p class="muted">Homepage friend links / partners are under Operations → More → {!! $hl('friendLinks', 'Friend links') !!}, stored as the <code>partners</code> block (or <code>friend_links</code>). That is not the nav theme’s “link” content model, which is a URL directory.</p>
-<p class="muted">Build contact forms in {!! $hl('forms', 'Forms') !!} and output them with <code>@@cmsForm</code>. Submissions land in Inbox. Comments wait for approval by default; switches are in {!! $hl('settings', 'Settings') !!}. The search-engine URL list is under Operations → More → {!! $hl('sitemap', 'Sitemap') !!}.</p>
+<p class="muted">Homepage friend links / partners are under Operations → Operations tools → {!! $hl('friendLinks', 'Friend links') !!}, stored as the <code>partners</code> block (or <code>friend_links</code>). That is not the nav theme’s “link” content model, which is a URL directory.</p>
+<p class="muted">Build contact forms in {!! $hl('forms', 'Forms') !!} and output them with <code>@@cmsForm</code>. Submissions land in Inbox. Comments wait for approval by default; switches are in {!! $settingsLink('interact', 'Settings → Comment rules') !!}. The search-engine URL list is under Operations → Operations tools → {!! $hl('sitemap', 'Sitemap') !!}.</p>
 
 <h3>Members</h3>
 <p class="muted">The front <code>/member</code> area handles register and login. If a model allows member posts and the group has that permission, members can submit drafts for review. Settings can turn comments and guest comments on.</p>
 
-<h3>Sites, backups, cache</h3>
-<p class="muted">{!! $hl('sites', 'Sites') !!} split by domain; sections and entries are isolated. Switch the site you are editing in the top bar. Backups and extra robots.txt rules are under {!! $hl('settingsMore', 'Settings → More') !!}; backups also work via <code>php artisan cms:backup</code>. Cache and static HTML are in {!! $hl('cache', 'Cache') !!}. nginx and object storage are under <a href="{{ $urls['env'] ?? '#' }}">Environment</a>.</p>
+<h3>Backups and cache</h3>
+<p class="muted">Backups and restores are under System → System maintenance, for super administrators only. Extra robots.txt rules are under {!! $settingsLink('seo', 'Settings → Search and analytics') !!}; backups also work via <code>php artisan cms:backup</code>. Cache and static HTML are in {!! $hl('cache', 'Cache') !!}. nginx and object storage are under <a href="{{ $urls['env'] ?? '#' }}">Environment</a>.</p>
 
 <h3>Common questions</h3>
 <div class="help-faq">
@@ -74,7 +80,7 @@
     </details>
     <details>
         <summary>Images or uploads 404</summary>
-        <p>Run <code>php artisan storage:link</code> at the project root, and keep <code>storage</code> and <code>bootstrap/cache</code> writable. If you set a CDN, check the asset domain in Settings. With <code>CMS_MEDIA_DISK=s3</code>, files are not under <code>public/storage</code> — check the bucket and <code>AWS_URL</code>.</p>
+        <p>Run <code>php artisan storage:link</code> at the project root, and keep <code>storage</code> and <code>bootstrap/cache</code> writable. If you set a CDN, check the asset domain in Settings → CDN and API. With <code>CMS_MEDIA_DISK=s3</code>, files are not under <code>public/storage</code> — check the bucket and <code>AWS_URL</code>.</p>
     </details>
     <details>
         <summary>A block or form is empty</summary>
@@ -82,11 +88,11 @@
     </details>
     <details>
         <summary>Search engines should skip some paths</summary>
-        <p>Open <code>/robots.txt</code> first (admin, members, install, and preview are already disallowed). Add lines under {!! $hl('settingsMore', 'Settings → More') !!} as “robots.txt extra rules”, e.g. <code>Disallow: /private</code>. While the site is closed the whole file is still <code>Disallow: /</code>. Do not write HTML tags. What to list is under Operations → More → {!! $hl('sitemap', 'Sitemap') !!}.</p>
+        <p>Open <code>/robots.txt</code> first (admin, members, install, and preview are already disallowed). Add lines under {!! $settingsLink('seo', 'Settings → Search and analytics') !!} as “robots.txt extra rules”, e.g. <code>Disallow: /private</code>. While the site is closed the whole file is still <code>Disallow: /</code>. Do not write HTML tags. What to list is under Operations → Operations tools → {!! $hl('sitemap', 'Sitemap') !!}.</p>
     </details>
     <details>
         <summary>Where is the sitemap</summary>
-        <p>Search engines use <code>/sitemap.xml</code> (and <code>/en/sitemap.xml</code> for English). Visitors can open <code>/sitemap</code>; turning that page off also hides the footer link. Toggle sections / entries / tags and extra URLs under Operations → More → {!! $hl('sitemap', 'Sitemap') !!}. Member-gated entries and unused tags are skipped. Do not use sitemap as a section slug.</p>
+        <p>Search engines use <code>/sitemap.xml</code> (and <code>/en/sitemap.xml</code> for English). Visitors can open <code>/sitemap</code>; turning that page off also hides the footer link. Toggle sections / entries / tags and extra URLs under Operations → Operations tools → {!! $hl('sitemap', 'Sitemap') !!}. Member-gated entries and unused tags are skipped. Do not use sitemap as a section slug.</p>
     </details>
     <details>
         <summary>I want the installer again</summary>

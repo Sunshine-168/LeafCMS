@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 
-/** 到期采集（可入队；多站点共用 queue:work） */
+/** 到期采集（可入队，由 queue:work 消费） */
 class RunCollectorsJob implements ShouldQueue
 {
     use Queueable;

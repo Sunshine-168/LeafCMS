@@ -1,8 +1,13 @@
 @php
     $urls = $urls ?? [];
     $hl = $hl ?? fn (string $key, string $label) => e($label);
+    $settingsLink = static function (string $tab, string $label) use ($urls): string {
+        return !empty($urls['settings'])
+            ? '<a href="'.e(route('admin.settings.edit', ['tab' => $tab])).'">'.e($label).'</a>'
+            : e($label);
+    };
 @endphp
-<p class="muted">主题是一套前台外观（Blade 文件 + 它声明的模型）。没有应用市场，都在本机 {!! $hl('themes', '主题') !!} 页切换。改文件、标签见「<a href="{{ $urls['theme'] ?? '#' }}">模板</a>」。</p>
+<p class="muted">主题就是一套前台外观：Blade 文件，加上它声明要用的模型。我没有做应用市场，都在本机 {!! $hl('themes', '主题') !!} 页切换。改文件和标签见「<a href="{{ $urls['theme'] ?? '#' }}">模板</a>」。</p>
 
 <div class="help-jumps">
     @if(!empty($urls['themes']))
@@ -58,8 +63,8 @@
 <p class="muted">点「用于本站」时按 <code>theme.json</code> 里的 <code>models</code> / <code>categories</code> 补缺（配置页勾选的模型会覆盖 json）。栏目标题可写成 <code>{"zh_cn":"新闻中心","en":"News"}</code>。卡片上「多语言」「自适应」也可在配置页勾选。自定义参数写在 <code>config</code>，前台 <code>cms_theme('键')</code>。</p>
 
 <h3>站名、Logo、手机外观</h3>
-<p class="muted">{!! $hl('settings', '设置') !!}里改网站名称。{!! $hl('settingsLook', '设置 → 外观') !!}可上传 Logo / Favicon、主色、页脚、ICP。留空则用主题自带配色。</p>
-<p class="muted">手机要另一套皮：在设置「更多」里选「手机外观」（常用 <code>mobile</code>），可再填手机域名，或按手机浏览器自动切。</p>
+<p class="muted">{!! $hl('settings', '设置') !!}里改网站名称。{!! $settingsLink('look', '设置 → 网站外观') !!}可上传 Logo / Favicon、主色、页脚、ICP。留空则用主题自带配色。</p>
+<p class="muted">手机要另一套皮：在{!! $settingsLink('look', '设置 → 网站外观') !!}里选「手机外观」（常用 <code>mobile</code>），可再填手机域名，或按手机浏览器自动切。</p>
 
 <h3>主题相关问题</h3>
 <div class="help-faq">

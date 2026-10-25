@@ -49,6 +49,14 @@
                 </div>
             @else
                 <p class="muted recycle-lead">{{ admin_t('locale.lead') }}</p>
+                @if(count($locales) > 1)
+                    <p class="muted recycle-lead">
+                        <a href="{{ route('admin.entries.index', ['translation' => 'missing_body']) }}">{{ admin_text('正文没翻译') }} {{ $translationGaps['missing_body'] ?? 0 }}</a>
+                        · <a href="{{ route('admin.entries.index', ['translation' => 'fallback']) }}">{{ admin_text('正在使用默认语言') }} {{ $translationGaps['fallback'] ?? 0 }}</a>
+                        · <a href="{{ route('admin.entries.index', ['translation' => 'stale']) }}">{{ admin_text('译文待复核') }} {{ $translationGaps['stale'] ?? 0 }}</a>
+                    </p>
+                    <p class="muted field-hint">{{ admin_text('译文待复核从下次保存开始算：默认语言改了、译文没一起改，才会出现在这里。') }}</p>
+                @endif
                 <table class="data">
                     <thead>
                     <tr>
@@ -161,7 +169,7 @@
                             <td>{{ $meta['label'] }}<div class="entry-row-meta"><code>cms_ui('{{ $key }}')</code></div></td>
                             @foreach($locales as $loc)
                                 <td>
-                                    <input type="text" name="theme_ui[{{ $key }}][{{ $loc->code }}]" value="{{ old('theme_ui.'.$key.'.'.$loc->code, $themeStored[$key][$loc->code] ?? $meta[$loc->code] ?? $meta['zh_cn']) }}">
+                                    <input type="text" name="theme_ui[{{ $key }}][{{ $loc->code }}]" value="{{ old('theme_ui.'.$key.'.'.$loc->code, \App\Support\ThemeUi::suggest($key, $loc->code)) }}">
                                 </td>
                             @endforeach
                         </tr>

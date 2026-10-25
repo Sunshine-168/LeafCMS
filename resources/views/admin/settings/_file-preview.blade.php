@@ -17,7 +17,11 @@
         <span class="muted settings-file-empty" @if($url !== '') hidden @endif>{{ $empty }}</span>
     </div>
     @if($url !== '' && ! empty($clear))
-        <label class="inline"><input type="checkbox" name="{{ $clear }}" value="1" data-file-clear> 去掉这张图</label>
+        <label class="inline"><input type="checkbox" name="{{ $clear }}" value="1" data-file-clear> {{ admin_text('去掉这张图') }}</label>
     @endif
-    <input type="file" name="{{ $name }}" accept="{{ $accept }}" data-file-input>
+    <div class="settings-file-picker">
+        <input class="settings-file-native" type="file" name="{{ $name }}" accept="{{ $accept }}" data-file-input hidden style="display:none">
+        <button class="btn btn-muted btn-sm" type="button" data-file-pick>{{ admin_text('选择文件') }}</button>
+        <span class="muted settings-file-name" data-file-name data-file-empty="{{ admin_text('未选择任何文件') }}">{{ admin_text('未选择任何文件') }}</span>
+    </div>
 </div>

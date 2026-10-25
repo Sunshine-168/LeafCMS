@@ -1,5 +1,5 @@
 @extends('admin.layout')
-@section('title', ($field->exists ? '编辑字段' : '加字段').' · '.$model->name)
+@section('title', ($field->exists ? admin_text('编辑字段') : admin_text('加字段')).' · '.$model->displayName())
 @section('icon', 'cube')
 @php
     $types = ['text','textarea','editor','number','url','image','images','file','date','datetime','select','radio','checkbox','switch','map','entry'];
@@ -12,15 +12,15 @@
         @csrf
         @if($field->exists) @method('PUT') @endif
 
-        <label for="field-label">显示名</label>
-        <input id="field-label" type="text" name="label" value="{{ old('label', $field->label) }}" placeholder="如 价格" required autofocus>
-        <p class="muted field-hint">写内容页上看到的名字。</p>
+        <label for="field-label">{{ admin_text('显示名') }}</label>
+        <input id="field-label" type="text" name="label" value="{{ old('label', $field->label) }}" placeholder="{{ admin_text('如 价格') }}" required autofocus>
+        <p class="muted field-hint">{{ admin_text('写内容页上看到的名字。') }}</p>
 
-        <label for="field-name">字段名</label>
-        <input id="field-name" type="text" name="name" value="{{ old('name', $field->name) }}" placeholder="如 price" required>
-        <p class="muted field-hint">英文字母开头，给模板用。建好后尽量不要改。</p>
+        <label for="field-name">{{ admin_text('字段名') }}</label>
+        <input id="field-name" type="text" name="name" value="{{ old('name', $field->name) }}" placeholder="{{ admin_text('如 price') }}" required>
+        <p class="muted field-hint">{{ admin_text('英文字母开头，给模板用。建好后尽量不要改。') }}</p>
 
-        <label>类型</label>
+        <label>{{ admin_text('类型') }}</label>
         <select name="type">
             @foreach($types as $t)
                 <option value="{{ $t }}" @selected(old('type', $field->type) === $t)>{{ \App\Models\Cms\ModelField::typeLabel($t) }}</option>
@@ -28,20 +28,20 @@
         </select>
 
         <details class="entry-seo">
-            <summary>选项和出现位置</summary>
-            <label>关联模型标识码（关联文档类型）</label>
-            <input type="text" name="related_model" value="{{ old('related_model', $field->options['related_model'] ?? ($field->name === 'manga_id' ? 'manga' : '')) }}" placeholder="如 manga">
-            <label>选项（下拉 / 单选，逗号分隔）</label>
-            <input type="text" name="choices" value="{{ old('choices', implode(',', $field->options['choices'] ?? [])) }}" placeholder="如 红,蓝,绿">
-            <label>排序</label>
+            <summary>{{ admin_text('选项和出现位置') }}</summary>
+            <label>{{ admin_text('关联模型标识码（关联文档类型）') }}</label>
+            <input type="text" name="related_model" value="{{ old('related_model', $field->options['related_model'] ?? ($field->name === 'manga_id' ? 'manga' : '')) }}" placeholder="{{ admin_text('如 manga') }}">
+            <label>{{ admin_text('选项（下拉 / 单选，逗号分隔）') }}</label>
+            <input type="text" name="choices" value="{{ old('choices', implode(',', $field->options['choices'] ?? [])) }}" placeholder="{{ admin_text('如 红,蓝,绿') }}">
+            <label>{{ admin_text('排序') }}</label>
             <input type="number" name="sort_order" value="{{ old('sort_order', $field->sort_order ?? 0) }}">
-            <label class="inline"><input type="checkbox" name="is_required" value="1" @checked(old('is_required', $field->is_required))> 必填</label>
-            <label class="inline"><input type="checkbox" name="is_filter" value="1" @checked(old('is_filter', $field->is_filter))> 可筛选</label>
-            <label class="inline"><input type="checkbox" name="is_list" value="1" @checked(old('is_list', $field->is_list))> 列表显示</label>
+            <label class="inline"><input type="checkbox" name="is_required" value="1" @checked(old('is_required', $field->is_required))>{{ admin_text('必填') }}</label>
+            <label class="inline"><input type="checkbox" name="is_filter" value="1" @checked(old('is_filter', $field->is_filter))>{{ admin_text('可筛选') }}</label>
+            <label class="inline"><input type="checkbox" name="is_list" value="1" @checked(old('is_list', $field->is_list))>{{ admin_text('列表显示') }}</label>
         </details>
 
-        <h3>绑定栏目</h3>
-        <p class="muted field-hint">不选 = 该模型下所有栏目都出现。勾选后只在这些主栏目的编辑页显示。</p>
+        <h3>{{ admin_text('绑定栏目') }}</h3>
+        <p class="muted field-hint">{{ admin_text('不选 = 该模型下所有栏目都出现。勾选后只在这些主栏目的编辑页显示。') }}</p>
         @php
             $bound = old('category_ids', $field->relationLoaded('categories')
                 ? $field->categories->pluck('id')->all()
@@ -55,12 +55,12 @@
                 {{ $cat->t('title') }}
             </label>
         @empty
-            <p class="muted">该模型下还没有栏目。</p>
+            <p class="muted">{{ admin_text('该模型下还没有栏目。') }}</p>
         @endforelse
 
         <div class="form-actions">
-            <button class="btn" type="submit">{{ $field->exists ? '保存' : '添加字段' }}</button>
-            <a class="btn btn-muted" href="{{ route('admin.models.index') }}">取消</a>
+            <button class="btn" type="submit">{{ $field->exists ? admin_text('保存') : admin_text('添加字段') }}</button>
+            <a class="btn btn-muted" href="{{ route('admin.models.index') }}">{{ admin_text('取消') }}</a>
         </div>
     </form>
 @endsection

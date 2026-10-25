@@ -2,6 +2,7 @@
 
 namespace App\Models\Cms;
 
+use App\Cms\BundledContentModels;
 use App\Models\Concerns\BelongsToSite;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -39,6 +40,12 @@ class ContentModel extends Model
     public function categories(): HasMany
     {
         return $this->hasMany(Category::class, 'model_id');
+    }
+
+    /** 内置模型按标识码显示。改过的名称保持原文。 */
+    public function displayName(): string
+    {
+        return BundledContentModels::displayName((string) $this->slug, (string) $this->name);
     }
 
     public static function kindLabel(?string $kind): string

@@ -147,7 +147,10 @@
     var body = table && table.querySelector('tbody');
     var idx = {{ count($rows) }};
     var catOptions = @json($catOptionsJson);
-    var localeCols = @json(collect($localeCols)->map(fn ($meta, $code) => ['code' => $code, 'label' => $meta['label'] ?? $code])->values());
+    @php
+        $menuLocaleCols = collect($localeCols)->map(fn ($meta, $code) => ['code' => $code, 'label' => $meta['label'] ?? $code])->values();
+    @endphp
+    var localeCols = @json($menuLocaleCols);
     var defaultCode = @json($defaultCode);
 
     function catSelectHtml(name, selected) {

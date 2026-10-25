@@ -5,6 +5,18 @@ namespace App\Cms;
 /** 自带内容模型定义。演示数据和主题包共用，避免各主题各写一套。 */
 class BundledContentModels
 {
+    /** 内置模型按标识码显示。改过的名称保持原文。 */
+    public static function displayName(string $slug, string $name): string
+    {
+        $seed = self::definitions()[$slug]['name'] ?? null;
+        $name = trim($name);
+        if (is_string($seed) && $name === $seed) {
+            return admin_t('model_pack.'.$slug);
+        }
+
+        return $name;
+    }
+
     /**
      * @return array<string, array{
      *     name:string,

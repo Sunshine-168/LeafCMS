@@ -48,7 +48,7 @@ window.CmsEditor = {
                 if (!r.ok || !j.ok) {
                     var msg = j.msg || j.message;
                     if (!msg && j.errors && j.errors.file) msg = j.errors.file[0];
-                    throw new Error(msg || '上传失败');
+                    throw new Error(msg || @js(admin_text('上传失败')));
                 }
                 return j.data;
             });
@@ -63,7 +63,7 @@ window.CmsEditor = {
             var empty = document.createElement('p');
             empty.className = 'muted';
             empty.style.gridColumn = '1 / -1';
-            empty.textContent = '库里还没有图片，用上面的框上传即可。';
+            empty.textContent = @js(admin_text('库里还没有图片，用上面的框上传即可。'));
             grid.appendChild(empty);
             return;
         }
@@ -89,11 +89,15 @@ window.CmsEditor = {
     loadGrid: function (onPick) {
         var grid = document.getElementById('mediaPickerGrid');
         if (!grid) return;
-        grid.innerHTML = '<p class="muted">加载中…</p>';
+        grid.replaceChildren();
+        var loading = document.createElement('p');
+        loading.className = 'muted';
+        loading.textContent = @js(admin_text('加载中…'));
+        grid.appendChild(loading);
         fetch(this.mediaUrl, { headers: { 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (rows) { window.CmsEditor.renderGrid(Array.isArray(rows) ? rows : [], onPick); })
-            .catch(function () { grid.innerHTML = '<p class="muted">加载失败</p>'; });
+            .catch(function () { loading.textContent = @js(admin_text('加载失败')); });
     },
     setStatus: function (text) {
         var el = document.getElementById('mediaPickerStatus');
@@ -105,13 +109,13 @@ window.CmsEditor = {
             return f && (f.type || '').indexOf('image/') === 0;
         });
         if (!list.length) {
-            this.setStatus('请选择 jpg / png / gif / webp 图片');
+            this.setStatus(@js(admin_text('请选择 jpg / png / gif / webp 图片')));
             return;
         }
         var onPick = this.currentOnPick;
         var mask = document.getElementById('mediaPickerMask');
         var zone = document.getElementById('mediaPickerUpload');
-        this.setStatus('正在上传…');
+        this.setStatus(@js(admin_text('正在上传…')));
         if (zone) zone.style.pointerEvents = 'none';
         var chain = Promise.resolve();
         list.forEach(function (file) {
@@ -125,7 +129,7 @@ window.CmsEditor = {
             self.setStatus('');
             if (mask) mask.classList.remove('open');
         }).catch(function (err) {
-            self.setStatus(err.message || '上传失败');
+            self.setStatus(err.message || @js(admin_text('上传失败')));
             self.loadGrid(onPick);
         }).then(function () {
             if (zone) zone.style.pointerEvents = '';
@@ -171,13 +175,13 @@ document.addEventListener('DOMContentLoaded', function () {
 <div class="media-picker-mask" id="mediaPickerMask">
     <div class="media-picker">
         <div style="display:flex;justify-content:space-between;align-items:center">
-            <strong>选择或上传图片</strong>
-            <button type="button" class="btn btn-sm btn-muted" id="mediaPickerClose">关闭</button>
+            <strong>{{ admin_text('选择或上传图片') }}</strong>
+            <button type="button" class="btn btn-sm btn-muted" id="mediaPickerClose">{{ admin_text('关闭') }}</button>
         </div>
-        <p class="muted" style="margin:8px 0 0">图片会写成 img 标签。也可以去「<a href="{{ route('admin.media.index') }}">媒体</a>」管理。</p>
+        <p class="muted" style="margin:8px 0 0">{{ admin_text('图片会写成 img 标签。也可以去「') }}<a href="{{ route('admin.media.index') }}">{{ admin_text('媒体') }}</a>{{ admin_text('」管理。') }}</p>
         <div class="media-picker-upload" id="mediaPickerUpload">
-            <strong>点击或拖入图片</strong>
-            <span class="muted">支持 jpg / png / gif / webp，上传后直接使用</span>
+            <strong>{{ admin_text('点击或拖入图片') }}</strong>
+            <span class="muted">{{ admin_text('支持 jpg / png / gif / webp，上传后直接使用') }}</span>
             <input type="file" id="mediaPickerFile" accept="image/jpeg,image/png,image/gif,image/webp" multiple hidden>
         </div>
         <p class="muted" id="mediaPickerStatus" style="margin:8px 0 0"></p>

@@ -11,8 +11,11 @@ use App\Services\Cms\HtmlCacheService;
 use App\Services\Cms\OpsNotifyService;
 use App\Support\AdminCategoryScope;
 use App\Support\Result;
+use App\Support\SqlLike;
 use App\Support\Translatable;
+use App\Support\TranslationWatch;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class EntryService
@@ -30,6 +33,7 @@ class EntryService
         ?int $categoryId = null,
         ?int $tagId = null,
         ?string $flag = null,
+        ?string $translation = null,
     ): LengthAwarePaginator {
         $query = Entry::query()
             ->with(['category', 'modelDef', 'member'])
@@ -37,6 +41,8 @@ class EntryService
             ->orderByDesc('id');
         if ($modelId) {
             $query->where('model_id', $modelId);
+        } else {
+            $query->whereHas('modelDef', fn ($inner) => $inner->where('is_active', true));
         }
         $status = (string) $status;
         if ($status === 'scheduled') {
@@ -48,10 +54,9 @@ class EntryService
         }
         $keyword = trim((string) $keyword);
         if ($keyword !== '') {
-            $like = '%'.addcslashes($keyword, '%_\\').'%';
-            $query->where(function ($inner) use ($keyword, $like) {
-                $inner->where('search_text', 'like', $like)
-                    ->orWhere('title', 'like', $like);
+            $query->where(function ($inner) use ($keyword) {
+                SqlLike::whereContains($inner, 'search_text', $keyword);
+                SqlLike::whereContains($inner, 'title', $keyword, 'or');
                 if (ctype_digit($keyword)) {
                     $inner->orWhere('id', (int) $keyword);
                 }
@@ -66,6 +71,11 @@ class EntryService
         if ($flag) {
             $query->withFlag($flag);
         }
+        if (in_array($translation, ['fallback', 'missing_body', 'stale'], true)) {
+            $query->where('translation_flags', 'like', '%"'.$translation.'"%');
+        } elseif ($translation === 'revision') {
+            $query->whereNotNull('draft_state');
+        }
         AdminCategoryScope::applyToEntries($query);
 
         return $query->paginate($perPage)->withQueryString();
@@ -76,6 +86,8 @@ class EntryService
         $q = Entry::query()->where('status', 'pending');
         if ($modelId) {
             $q->where('model_id', $modelId);
+        } else {
+            $q->whereHas('modelDef', fn ($inner) => $inner->where('is_active', true));
         }
         AdminCategoryScope::applyToEntries($q);
 
@@ -90,10 +102,9 @@ class EntryService
         }
         $keyword = trim((string) $keyword);
         if ($keyword !== '') {
-            $like = '%'.addcslashes($keyword, '%_\\').'%';
-            $query->where(function ($inner) use ($keyword, $like) {
-                $inner->where('search_text', 'like', $like)
-                    ->orWhere('title', 'like', $like);
+            $query->where(function ($inner) use ($keyword) {
+                SqlLike::whereContains($inner, 'search_text', $keyword);
+                SqlLike::whereContains($inner, 'title', $keyword, 'or');
                 if (ctype_digit($keyword)) {
                     $inner->orWhere('id', (int) $keyword);
                 }
@@ -105,6 +116,37 @@ class EntryService
     }
 
     public function save(?Entry $entry, array $input): array
+    {
+        if ($entry?->exists && array_key_exists('edit_version', $input)) {
+            return DB::transaction(function () use ($entry, $input) {
+                $current = Entry::query()->whereKey($entry->id)->lockForUpdate()->first();
+                if (! $current || ! hash_equals($this->editVersion($current), (string) $input['edit_version'])) {
+                    return Result::fail(admin_text('内容已被其他窗口或同事修改，本次未覆盖。请保留本地副本，重新打开最新版本后再合并。'));
+                }
+
+                return $this->persist($current, $input);
+            });
+        }
+
+        return $this->persist($entry, $input);
+    }
+
+    public function editVersion(Entry $entry): string
+    {
+        $fields = ['site_id', 'model_id', 'category_id', 'title', 'slug', 'excerpt', 'content', 'meta_title', 'meta_description', 'attrs', 'cover', 'flags', 'status', 'published_at', 'sort_order', 'is_homepage'];
+        $snapshot = [];
+        foreach ($fields as $field) {
+            $snapshot[$field] = $entry->getRawOriginal($field);
+        }
+        $snapshot['categories'] = $entry->categories()->orderBy('cms_categories.id')->pluck('cms_categories.id')->all();
+        $snapshot['tags'] = $entry->tags()->orderBy('cms_tags.id')->pluck('cms_tags.id')->all();
+        $snapshot['draft_payload'] = $entry->getRawOriginal('draft_payload');
+        $snapshot['draft_state'] = $entry->getRawOriginal('draft_state');
+
+        return hash('sha256', json_encode($snapshot, JSON_THROW_ON_ERROR));
+    }
+
+    private function persist(?Entry $entry, array $input): array
     {
         if ($entry?->exists) {
             $entry->loadMissing('categories');
@@ -134,11 +176,15 @@ class EntryService
         $creating = ! $entry->exists;
         $wasPublished = $entry->exists && $entry->status === 'published';
         $wasPending = $entry->exists && $entry->status === 'pending';
+        if ($wasPublished && $this->keepsLiveVersion($input)) {
+            return $this->storeWorkingDraft($entry, $input);
+        }
         if ($entry->exists) {
             $entry->loadMissing(['categories', 'tags']);
             $this->snapshotRevision($entry);
         }
         $localeFields = ['title', 'slug', 'excerpt', 'content', 'meta_title', 'meta_description'];
+        $beforeLocales = Translatable::existingTranslations($entry, $localeFields);
         $packed = Translatable::packTranslations(
             $input['locales'] ?? [],
             $localeFields,
@@ -173,6 +219,10 @@ class EntryService
             Entry::query()->where('id', '!=', $entry->id ?? 0)->update(['is_homepage' => false]);
         }
 
+        $entry->draft_payload = null;
+        $entry->draft_state = null;
+        $entry->updated_by = auth('admin')->id();
+        TranslationWatch::remember($entry, $beforeLocales, $packed);
         $entry->rebuildSearchText();
         $entry->save();
         $this->ensurePreviewToken($entry);
@@ -190,6 +240,62 @@ class EntryService
         event(new EntrySaved($entry, $creating, $status === 'published' && ! $wasPublished));
 
         return Result::ok($entry, '保存成功');
+    }
+
+    /** @param  array<string, mixed>  $input */
+    private function keepsLiveVersion(array $input): bool
+    {
+        $action = (string) ($input['submit_action'] ?? 'save');
+        if ($action === 'publish' && $this->canPublish()) {
+            return false;
+        }
+        $status = (string) ($input['status'] ?? 'draft');
+
+        return ! ($this->canPublish() && $status === 'draft');
+    }
+
+    /** @param  array<string, mixed>  $input */
+    private function storeWorkingDraft(Entry $entry, array $input): array
+    {
+        $localeFields = ['title', 'slug', 'excerpt', 'content', 'meta_title', 'meta_description'];
+        $beforeLocales = Translatable::existingTranslations($entry, $localeFields);
+        $packed = Translatable::packTranslations($input['locales'] ?? [], $localeFields, $beforeLocales);
+        $categoryId = $input['category_id'] ?: null;
+        $extraIds = array_values(array_unique(array_filter(array_map('intval', (array) ($input['category_ids'] ?? [])))));
+        if ($categoryId) {
+            array_unshift($extraIds, (int) $categoryId);
+            $extraIds = array_values(array_unique($extraIds));
+        }
+        $state = ((string) ($input['status'] ?? '')) === 'pending' ? 'pending' : 'draft';
+        $wasPending = $entry->draft_state === 'pending';
+        $entry->draft_payload = array_merge($packed, [
+            'cover' => $input['cover'] ?? null,
+            'flags' => $this->normalizeFlags($input),
+            'attrs' => $input['attrs'] ?? [],
+            'category_id' => $categoryId ? (int) $categoryId : null,
+            'category_ids' => $extraIds,
+            'tag_ids' => array_values(array_filter(array_map('intval', (array) ($input['tag_ids'] ?? [])))),
+            'sort_order' => (int) ($input['sort_order'] ?? $entry->sort_order),
+            'is_homepage' => ! empty($input['is_homepage']),
+        ]);
+        $entry->draft_state = $state;
+        $entry->updated_by = auth('admin')->id();
+        $draft = clone $entry;
+        $draft->fill($packed);
+        TranslationWatch::remember($draft, $beforeLocales, $packed);
+        $entry->locale_sync = $draft->locale_sync;
+        $entry->translation_flags = $draft->translation_flags;
+        $entry->save();
+        $this->ensurePreviewToken($entry);
+        if ($state === 'pending' && ! $wasPending) {
+            $notice = clone $entry;
+            $notice->title = $packed['title'];
+            $this->opsNotify->entryPending($notice);
+        }
+
+        return Result::ok($entry, $state === 'pending'
+            ? admin_text('修改稿已提交审核，线上内容未变')
+            : admin_text('修改稿已保存，线上内容未变'));
     }
 
     /** @param  array<string, mixed>  $input */

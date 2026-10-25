@@ -3,12 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ admin_t('auth.forgot_title') }} - CMS</title>
+    <title>{{ admin_t('auth.forgot_title') }} - {{ admin_t('brand') }}</title>
+    <link rel="icon" href="{{ asset('assets/brand/logo.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="https://cdn.staticfile.net/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('assets/css/admin.css') }}">
 </head>
 <body class="login-page">
 <div class="login-box">
+    <div class="login-brand"><img src="{{ asset('assets/brand/logo.svg') }}" alt="" width="32" height="32"><span>{{ admin_t('brand') }}</span></div>
     <h1>{{ admin_t('auth.forgot_title') }}</h1>
     <p class="sub">{{ admin_t('auth.forgot_lead') }}</p>
     <form method="post" action="{{ route('admin.password.forgot.submit') }}">

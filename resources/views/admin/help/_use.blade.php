@@ -1,8 +1,14 @@
 @php
     $urls = $urls ?? [];
     $hl = $hl ?? fn (string $key, string $label) => e($label);
+    $settingsLink = static function (string $tab, string $label) use ($urls): string {
+        return !empty($urls['settings'])
+            ? '<a href="'.e(route('admin.settings.edit', ['tab' => $tab])).'">'.e($label).'</a>'
+            : e($label);
+    };
 @endphp
-<p class="muted">前台长什么样由<strong>主题</strong>决定，栏目和文章由<strong>内容模型</strong>决定。侧栏每一项见「<a href="{{ $urls['helpAdmin'] ?? '#' }}">后台</a>」，换外观见「<a href="{{ $urls['helpThemes'] ?? '#' }}">主题</a>」，改 Blade 见「<a href="{{ $urls['theme'] ?? '#' }}">模板</a>」，取数据见「<a href="{{ $urls['tags'] ?? '#' }}">标签</a>」。</p>
+<p class="muted">LeafCMS 是我用 Laravel 写的建站程序，协议 MIT。前台样子由<strong>主题</strong>决定，文章字段由<strong>内容模型</strong>决定。没有应用商店，也不会做在线升级。这份说明和仓库 README 说的是同一件事。</p>
+<p class="muted">侧栏每一项见「<a href="{{ $urls['helpAdmin'] ?? '#' }}">后台</a>」，换外观见「<a href="{{ $urls['helpThemes'] ?? '#' }}">主题</a>」，改 Blade 见「<a href="{{ $urls['theme'] ?? '#' }}">模板</a>」，取数据见「<a href="{{ $urls['tags'] ?? '#' }}">标签</a>」。空站不要一上来改模板，先让网站能打开、能发出一篇文章。</p>
 
 <div class="help-jumps">
     @if(!empty($urls['settings']))
@@ -39,9 +45,9 @@
         <tr><th>位置</th><th>做什么</th></tr>
     </thead>
     <tbody>
-        <tr><td>内容</td><td>{!! $hl('categories', '栏目') !!}、{!! $hl('entries', '文章') !!}、{!! $hl('entryTags', '标签') !!}、{!! $hl('media', '媒体') !!}、{!! $hl('submissions', '留言') !!}、{!! $hl('comments', '评论') !!}。更多里有{!! $hl('flags', '推荐') !!}、{!! $hl('recommends', '推荐位') !!}、{!! $hl('models', '模型') !!}、{!! $hl('menus', '导航') !!}、{!! $hl('forms', '表单') !!}、{!! $hl('recycle', '回收站') !!}。</td></tr>
-        <tr><td>运营</td><td>{!! $hl('members', '会员') !!}、{!! $hl('collectors', '采集') !!}、{!! $hl('cache', '缓存') !!}（页面缓存和磁盘静态页）。更多里有{!! $hl('friendLinks', '友链') !!}、{!! $hl('sitemap', '地图') !!}、{!! $hl('redirects', '跳转') !!}、{!! $hl('groups', '分组') !!}。</td></tr>
-        <tr><td>系统</td><td>{!! $hl('sites', '站点') !!}、{!! $hl('settings', '设置') !!}、{!! $hl('themes', '主题') !!}、语言、日志、管理员、权限，以及本页说明。说明不跟权限走，所以留在系统最底下。</td></tr>
+        <tr><td>内容</td><td>{!! $hl('categories', '栏目') !!}、{!! $hl('entries', '文章') !!}、{!! $hl('entryTags', '标签') !!}、{!! $hl('media', '媒体') !!}、{!! $hl('submissions', '留言') !!}、{!! $hl('comments', '评论') !!}。「内容配置」里有{!! $hl('flags', '推荐') !!}、{!! $hl('recommends', '推荐位') !!}、{!! $hl('models', '模型') !!}、{!! $hl('menus', '导航') !!}、{!! $hl('forms', '表单') !!}、{!! $hl('recycle', '回收站') !!}。</td></tr>
+        <tr><td>运营</td><td>{!! $hl('members', '会员') !!}、{!! $hl('collectors', '采集') !!}、{!! $hl('cache', '缓存') !!}（页面缓存和磁盘静态页）。「运营工具」里有{!! $hl('friendLinks', '友链') !!}、{!! $hl('sitemap', '站点地图') !!}、{!! $hl('redirects', '跳转') !!}、{!! $hl('groups', '分组') !!}。</td></tr>
+        <tr><td>系统</td><td>{!! $hl('settings', '设置') !!}、{!! $hl('themes', '主题') !!}、语言、日志、管理员、权限，以及本页说明。说明不跟权限走，所以留在系统最底下。</td></tr>
     </tbody>
 </table>
 
@@ -53,14 +59,14 @@
 <h3>导航、推荐位、表单</h3>
 <p class="muted">栏目勾「菜单」后，主题里 <code>@@cmsMenu</code> 没配导航时会拿这些栏目当顶栏。要精确控制顺序，用{!! $hl('menus', '导航') !!}建 header 菜单。</p>
 <p class="muted">首页 Banner、最新新闻这类区块用{!! $hl('recommends', '推荐位') !!}，标识要和模板里的 <code>name</code> 对上，例如 <code>home_banner</code>。手填条目点「选择」从媒体库挑图，保存前能看到预览；模板里用 <code>cms_media($item-&gt;image)</code> 输出。</p>
-<p class="muted">首页友情链接 / 合作伙伴走侧栏「运营 → 更多 → {!! $hl('friendLinks', '友链') !!}」，数据存在推荐位 <code>partners</code>（没有则用 <code>friend_links</code>）。这和导航站主题里的「链接」模型不是一回事：那个是网址目录。</p>
-<p class="muted">联系表单在{!! $hl('forms', '表单') !!}里建，前台用 <code>@@cmsForm</code> 按标识输出。提交进「留言」。评论默认待审核，可在{!! $hl('settings', '设置') !!}里开关。搜索引擎用的地址清单在「运营 → 更多 → {!! $hl('sitemap', '地图') !!}」。</p>
+<p class="muted">首页友情链接 / 合作伙伴走侧栏「运营 → 运营工具 → {!! $hl('friendLinks', '友链') !!}」，数据存在推荐位 <code>partners</code>（没有则用 <code>friend_links</code>）。这和导航站主题里的「链接」模型不是一回事：那个是网址目录。</p>
+<p class="muted">联系表单在{!! $hl('forms', '表单') !!}里建，前台用 <code>@@cmsForm</code> 按标识输出。提交进「留言」。评论默认待审核，可在{!! $settingsLink('interact', '设置 → 评论规则') !!}里开关。搜索引擎用的地址清单在「运营 → 运营工具 → {!! $hl('sitemap', '站点地图') !!}」。</p>
 
 <h3>会员</h3>
 <p class="muted">前台 <code>/member</code> 可注册登录。模型勾「允许会员投稿」且分组有投稿权限后，会员能写稿，后台审过再发布。设置里可开评论、游客评论。</p>
 
-<h3>多站、备份、缓存</h3>
-<p class="muted">{!! $hl('sites', '站点') !!}按域名分站，栏目和文章带站点隔离。顶栏可切换当前编辑站。备份、robots.txt 补充规则都在{!! $hl('settingsMore', '设置 → 更多') !!}；备份也可用命令 <code>php artisan cms:backup</code>。缓存、静态页生成都在{!! $hl('cache', '缓存') !!}，nginx 和对象存储见「<a href="{{ $urls['env'] ?? '#' }}">环境</a>」。</p>
+<h3>备份、缓存</h3>
+<p class="muted">备份还原在「系统 → 系统维护」，仅超级管理员可用；robots.txt 补充规则在{!! $settingsLink('seo', '设置 → 搜索与统计') !!}。备份也可用命令 <code>php artisan cms:backup</code>。缓存、静态页生成都在{!! $hl('cache', '缓存') !!}，nginx 和对象存储见「<a href="{{ $urls['env'] ?? '#' }}">环境</a>」。</p>
 
 <h3>常见问题</h3>
 <div class="help-faq">
@@ -74,7 +80,7 @@
     </details>
     <details>
         <summary>图片或上传文件 404</summary>
-        <p>项目根执行过 <code>php artisan storage:link</code>，且 <code>storage</code>、<code>bootstrap/cache</code> 可写。配了 CDN 时检查「设置」里的资源域名。若 <code>.env</code> 写了 <code>CMS_MEDIA_DISK=s3</code>，文件不在本机 <code>public/storage</code>，要核对桶名和 <code>AWS_URL</code>。</p>
+        <p>项目根执行过 <code>php artisan storage:link</code>，且 <code>storage</code>、<code>bootstrap/cache</code> 可写。配了 CDN 时检查「设置 → 加速与接口」里的资源域名。若 <code>.env</code> 写了 <code>CMS_MEDIA_DISK=s3</code>，文件不在本机 <code>public/storage</code>，要核对桶名和 <code>AWS_URL</code>。</p>
     </details>
     <details>
         <summary>推荐位、表单是空的</summary>
@@ -82,11 +88,11 @@
     </details>
     <details>
         <summary>不想让搜索引擎抓某几页</summary>
-        <p>打开前台 <code>/robots.txt</code> 先看默认规则（后台、会员、安装、预览已经禁止）。再在{!! $hl('settingsMore', '设置 → 更多') !!}写「robots.txt 补充规则」，例如 <code>Disallow: /private</code>。关站时整站仍是 <code>Disallow: /</code>。不要写 HTML 标签。收录范围在「运营 → 更多 → {!! $hl('sitemap', '地图') !!}」。</p>
+        <p>打开前台 <code>/robots.txt</code> 先看默认规则（后台、会员、安装、预览已经禁止）。再在{!! $settingsLink('seo', '设置 → 搜索与统计') !!}写「robots.txt 补充规则」，例如 <code>Disallow: /private</code>。关站时整站仍是 <code>Disallow: /</code>。不要写 HTML 标签。收录范围在「运营 → 运营工具 → {!! $hl('sitemap', '站点地图') !!}」。</p>
     </details>
     <details>
         <summary>站点地图在哪</summary>
-        <p>搜索引擎看 <code>/sitemap.xml</code>（英文站是 <code>/en/sitemap.xml</code>）。给人看的目录是 <code>/sitemap</code>，可在后台关掉，页脚链接会一起消失。勾选栏目 / 文章 / 标签、加补充地址，都在侧栏「运营 → 更多 → {!! $hl('sitemap', '地图') !!}」（这项就叫地图）。会员才能看的文章、没有公开文章的标签不会列入。栏目标识不要写成 sitemap。</p>
+        <p>搜索引擎看 <code>/sitemap.xml</code>（英文站是 <code>/en/sitemap.xml</code>）。给人看的目录是 <code>/sitemap</code>，可在后台关掉，页脚链接会一起消失。勾选栏目 / 文章 / 标签、加补充地址，都在侧栏「运营 → 运营工具 → {!! $hl('sitemap', '站点地图') !!}」。会员才能看的文章、没有公开文章的标签不会列入。栏目标识不要写成 sitemap。</p>
     </details>
     <details>
         <summary>想重新跑安装向导</summary>

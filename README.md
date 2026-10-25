@@ -1,12 +1,64 @@
 # LeafCMS
 
-Laravel 13 建站 CMS：栏目、动态模型、推荐位、多站、会员、采集、静态化。前台只用 Blade **`@cms*`** 标签，不依赖 Filament，没有应用市场。
+我用 Laravel 写的开源建站程序。栏目、文章、会员、采集和静态页都在这一套里。前台模板只用 Blade 的 `@cms*` 标签，不靠 Filament，也没有应用商店。
 
-MIT 许可。二次开发按 Laravel 常规做（Service / Event / 主题目录），**不会**做在线升级、OAuth、支付，也不会引入第二套模板标签。见 [CONTRIBUTING](CONTRIBUTING.md)、[SECURITY](SECURITY.md)。每次更新记在 [CHANGELOG](CHANGELOG.md)。内容保存、评论、表单、换主题会发出 `App\Events\*`，不必改核心文件。
+协议是 MIT。你可以自己部署，也可以按 Laravel 的习惯改：Service、事件、主题目录。我不会做在线升级、第三方登录和支付，也不会再引入第二套模板标签。这些边界写在文末，免得装完才发现不对。
+
+参与改代码看 [CONTRIBUTING](CONTRIBUTING.md)，安全问题看 [SECURITY](SECURITY.md)，每次改动记在 [CHANGELOG](CHANGELOG.md)。保存内容、评论、表单、换主题时会发出 `App\Events\*`，扩展时监听事件即可，不必改核心文件。
+
+后台「说明」和这份 README 说的是同一件事。装好后打开说明，按「怎么用」走一遍。
+
+## 它适合做什么
+
+企业站、博客、下载、导航和源码目录都可以。换主题时会补上缺的内容模型，不会清掉已有文章。体育主题只做公开资讯演示，请合法使用。
 
 ## 安装
 
-三种方式，装好后打开 http://127.0.0.1:8000/ 与 http://127.0.0.1:8000/admin/login。也可以打开 `/install` 在页面里切换「网页安装 / Laravel 命令行 / Docker」。
+先选你的场景。装好后打开 http://127.0.0.1:8000/ 和 http://127.0.0.1:8000/admin/login 。安装页顶部五个入口：网页安装、宝塔配置、Shell、Docker、上线部署。后台登录用邮箱，不是用户名。
+
+### 网页安装
+
+本机已有 PHP 8.4+ 和 Composer 时：
+
+```bash
+composer install
+cp .env.example .env          # Windows: copy .env.example .env
+php artisan key:generate
+php artisan serve
+```
+
+打开 http://127.0.0.1:8000/install 。三步：环境检查、数据库、网站和管理员。默认 SQLite，不用另装数据库。勾选示例栏目和文章才会导入演示内容。
+
+### 宝塔
+
+打开 http://你的域名/install?way=baota ，按红圈点：
+
+1. 软件商店安装 PHP 8.4，网站 PHP 也选 8.4。
+2. 网站目录保持项目根，运行目录改成 `/public` 并保存。没有这一栏时，把网站目录末尾改成 `/public`。
+3. 伪静态贴上安装页里的规则（第一站是 `site_1`）。
+4. `storage` 和 `bootstrap` 所有者设为 `www`，勾上应用到子目录。
+5. 浏览器打开 `http://你的域名/install`，走网页安装。
+6. 计划任务：类型 Shell 脚本，名称「站点定时」，周期「N分钟」填 `1`。脚本框只贴这一行，不要再加 `* * * * *`，也不要用 `php-fpm`：
+
+```bash
+/www/server/php/84/bin/php /www/wwwroot/你的站点/artisan schedule:run >> /dev/null 2>&1
+```
+
+运行目录没改对时，打开首页会看到「还差一步」，按图改完再刷新。装完后的完成页也能复制这一行定时命令。同一份图解在后台「说明 → 宝塔」。
+
+### 一条命令
+
+```bash
+bash install.sh
+```
+
+Windows：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+不写密码时，邮箱是 `admin@example.com`，密码是 `Admin@12345`。自己设密码：`bash install.sh '你的密码'`，至少 8 位。会导入示例栏目和文章。上线后请改掉这个密码。
 
 ### Docker
 
@@ -14,9 +66,9 @@ MIT 许可。二次开发按 Laravel 常规做（Service / Event / 主题目录�
 docker compose up --build
 ```
 
-启动时会复制 `.env`、迁移、导入演示数据。本地演示账号见下文，上线前必须改掉。
+启动时会复制 `.env`、建表、导入演示数据。容器里每分钟自己跑计划任务，不用再配系统定时。本地演示账号见下文，上线前必须改掉。
 
-### Laravel 命令行
+### 分步命令
 
 需要 PHP 8.4+ 和 Composer。默认 SQLite。
 
@@ -24,22 +76,11 @@ docker compose up --build
 composer install
 cp .env.example .env          # Windows: copy .env.example .env
 php artisan key:generate
-php artisan cms:install --email=you@example.com --password=YourPass#1
+php artisan cms:install --email=you@example.com --password=YourPass#1 --demo
 php artisan serve
 ```
 
-加 `--demo` 会导入示例栏目和文章。MySQL 先改 `.env` 里的 `DB_*` 再执行 `cms:install`。
-
-### 网页向导
-
-```bash
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan serve
-```
-
-打开 http://127.0.0.1:8000/install ，检查环境、选数据库、填写管理员。不勾选演示数据也会创建你自己的超管。上线时的 PHP / MySQL / nginx 在安装页「上线部署」，装好后也可在后台「运营 → 缓存」底部查看。
+MySQL 先改 `.env` 里的 `DB_*` 再执行 `cms:install`。不加 `--demo` 就不会导入示例内容。上线时的 PHP / MySQL / nginx 在安装页「上线部署」，装好后也可在后台「说明 → 环境」查看。
 
 **命令行一键种子（开发）**
 
@@ -50,6 +91,15 @@ php artisan storage:link
 
 - 本地种子：超管 `admin@example.com` / `Admin@12345`；编辑 `editor@example.com` / `Editor@12345`（无发布权）；运营 `operator@example.com` / `Operator@12345`；会员 `member@example.com` / `Member@12345`；认证会员 `vip@example.com` / `Vip@12345`
 - 安装锁：`storage/app/install.lock`（删掉会再次进入 `/install`）
+
+### 打不开时
+
+| 现象 | 怎么处理 |
+| --- | --- |
+| 打开首页是 404，或看到「还差一步」 | 宝塔「运行目录」改成 `/public` 并保存。没有这一栏时，把网站目录末尾改成 `/public` |
+| 安装页提示扩展或函数被禁用 | 软件商店里 PHP 8.4 的设置，打开需要的扩展，并在禁用函数里删掉页面列出的名字 |
+| 首页能开，栏目页 404 | 伪静态贴上安装页里的规则并保存 |
+| 定时采集不跑 | 计划任务周期是每分钟，脚本里是 `bin/php`，不是 `php-fpm`，也不要多贴一行 `* * * * *` |
 
 ## 站点形态（主题包）
 
@@ -83,6 +133,10 @@ php artisan storage:link
 - 后台 ACL：角色权限 + 管理员栏目授权；侧栏按 `canPerm` 过滤
 - 后台「系统 → 说明」：怎么用、后台各页、主题、模板、`@cms*` 标签；安装里有 PHP / MySQL / nginx、**定时任务和队列**、命令行、Docker
 - 站点设置「更多」：再导入演示数据 / **整站备份**（或 `php artisan cms:backup`）。换主题后前台还是旧样子，在「运营 → 缓存」清空缓存。
+
+## 给改代码的人
+
+上面是装站和日常使用。从这里往下是目录、模板标签、路由和接口，给要改 LeafCMS 的人查，不是安装步骤。
 
 ## 目录
 
@@ -151,7 +205,7 @@ resources/views/themes/{enterprise,mobile,download,nav,source,blog,manga,sports}
 | `/comment/{entry}` | 评论提交（默认待审核；站点设置可开关/游客/限流/通知） |
 | （后台配置） | 入站重定向：精确路径 301/302，命中计数，按站隔离 |
 | `/preview/{token}` | 草稿/未到点发布预览（后台生成，默认 7 天；不计入浏览、不进 HTML 缓存） |
-| `/search?q=` | 全站搜索（可按模型关闭 `is_searchable`；游客不含会员门槛文档） |
+| `/search?q=` | 全站搜索（Laravel Scout，默认查数据库；可按模型关闭 `is_searchable`；游客不含会员门槛文档） |
 | `/member/login` | 会员登录（算术验证码 + 每分钟 5 次） |
 | `/member/register` | 会员注册（算术验证码 + 每分钟 5 次） |
 | `/member/forgot` | 找回密码（POST 每分钟 5 次；未配邮件时页面展示重置链接） |
@@ -220,18 +274,7 @@ resources/views/themes/{enterprise,mobile,download,nav,source,blog,manga,sports}
 
 后台「采集」可配置公开 RSS/Atom、JSON 列表，或 **HTML 选择器**（列表页条目 + 可选同源详情正文）。按间隔写入文档（`source_guid` 去重）。HTML 模式不翻页、不爬全站，并拒绝内网地址。仅采集你有权使用的公开源。
 
-## 多站点（全站租户）
-
-共享同一数据库与进程：按 **域名** 解析站点，栏目/内容/会员/设置等均带 `site_id` 隔离。
-
-- 后台「系统 → 站点管理」维护域名；顶栏切换当前编辑站
-- 超管可切全部站点；普通管理员在「管理员」里勾选可管理站点
-- 新建站点会复制默认站的基础设置 / 语言 / Flags / 会员组，**不复制内容**
-- 本地多域名可用 hosts，例如：`127.0.0.1 site-a.test site-b.test`
-- `local` / `testing` 环境未知域名回落默认站；生产未知域名返回 404
-- 前台 API 同样按 `Host` 解析（`/api/site/config` 含 `site_id` / `site_domain`）
-
-### 采集与调度运行模式
+## 采集与调度运行模式
 
 | `CMS_COLLECT_MODE` | 行为 | 需要进程 |
 |---|---|---|
@@ -298,12 +341,12 @@ php artisan cms:collect --sync
 
 默认用 CACHE 驱动的 epoch 全站失效；Redis/Memcached 时可按标签精细失效。
 
-## 明确不做
+## 我故意不做的
 
-前台模板标签只有 `@cms*`。下列能力也**不会**做：
+前台模板标签只有 `@cms*`。下面这些我也不做，避免这个项目变成什么都有、什么都改不动：
 
-- 应用中心 / 在线升级、运行时按模型建物理表、Filament、旧库数据导入、遗留 `cms_pages` / `cms_posts` 表
-- 自由伪静态规则矩阵、短信、微信/OAuth 登录、支付
-- Webhooks、Scout 全文检索、作者归档页
+- 应用中心、在线升级、按模型当场建物理表、Filament、旧库导入，以及遗留的 `cms_pages` / `cms_posts` 表
+- 自由伪静态规则矩阵、短信、微信或 OAuth 登录、支付
+- Webhooks、作者归档页
 
-会员权限、前台投稿（待审后发布）、表单、评论、收藏、采集、统计、多站点、缓存、预览/修订、CDN 资源域名、整站备份均已在本目录实现。
+会员权限、前台投稿（待审后发布）、表单、评论、收藏、采集、统计、缓存、预览和修订、CDN 资源域名、整站备份、全文检索，都已经在这个仓库里。前台搜索我用 Laravel Scout，默认查自己的数据库，保存时直接更新，不用另开队列。

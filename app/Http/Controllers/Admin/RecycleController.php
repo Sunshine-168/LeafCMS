@@ -59,7 +59,7 @@ class RecycleController extends Controller
         $result = match ($action) {
             'restore' => $this->entries->restoreMany($ids),
             'delete' => $this->entries->forceDeleteMany($ids),
-            default => ['ok' => false, 'msg' => '未知操作'],
+            default => ['ok' => false, 'msg' => admin_text('未知操作')],
         };
 
         return redirect()->route('admin.recycle.index', $this->listQuery($request))

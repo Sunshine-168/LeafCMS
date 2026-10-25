@@ -280,31 +280,81 @@ class ThemeUi
         return is_array($decoded) ? $decoded : [];
     }
 
+    /** @var array<string, array<string, string>> */
+    protected static array $phrasePacks = [];
+
+    protected static function packPhrase(string $key, string $locale): ?string
+    {
+        $folder = match ($locale) {
+            'zh_tw', 'zh-tw' => 'zh_TW',
+            'zh_cn', 'zh-cn' => null,
+            default => $locale,
+        };
+        if (! is_string($folder) || ! preg_match('/^[A-Za-z_]+$/', $folder)) {
+            return null;
+        }
+        if (! array_key_exists($folder, self::$phrasePacks)) {
+            $path = lang_path($folder.'/theme_ui.php');
+            $bag = is_file($path) ? include $path : [];
+            self::$phrasePacks[$folder] = is_array($bag) ? $bag : [];
+        }
+        $text = self::$phrasePacks[$folder][$key] ?? null;
+
+        return is_string($text) && trim($text) !== '' ? $text : null;
+    }
+
     public static function get(string $key): string
     {
         $locale = Locale::current();
-        $catalog = self::catalog();
-        $fallback = $catalog[$key]['zh_cn'] ?? $key;
         $fromTheme = self::fromThemePack($key, $locale);
         if ($fromTheme !== null) {
             return $fromTheme;
         }
+
+        return self::suggest($key, $locale);
+    }
+
+    /** 表单和前台共用。别的语言如果只存了简体原文，改用该语言自己的文案。 */
+    public static function suggest(string $key, string $locale): string
+    {
+        $catalog = self::catalog();
+        $zh = (string) ($catalog[$key]['zh_cn'] ?? $key);
         $stored = self::stored();
-        $fromStore = $stored[$key][$locale] ?? null;
-        if (is_string($fromStore) && trim($fromStore) !== '') {
-            return $fromStore;
+        $raw = $stored[$key][$locale] ?? null;
+        $storedValue = is_string($raw) ? trim($raw) : '';
+        $pack = self::packPhrase($key, $locale);
+        $builtin = (string) ($catalog[$key][$locale] ?? '');
+        if ($storedValue !== '' && ! self::isCopiedSimplified($locale, $key, $storedValue, $zh, $pack)) {
+            return $storedValue;
         }
-        $fromCatalog = $catalog[$key][$locale] ?? null;
-        if (is_string($fromCatalog) && $fromCatalog !== '') {
-            return $fromCatalog;
+        if ($builtin !== '') {
+            return $builtin;
+        }
+        if ($pack !== null) {
+            return $pack;
         }
         $default = Locale::default();
-        $fromDefault = $stored[$key][$default] ?? $catalog[$key][$default] ?? $catalog[$key]['en'] ?? null;
-        if (is_string($fromDefault) && $fromDefault !== '') {
-            return $fromDefault;
+        if ($default !== $locale) {
+            $fromDefault = $stored[$key][$default] ?? $catalog[$key][$default] ?? null;
+            if (is_string($fromDefault) && trim($fromDefault) !== '') {
+                return trim($fromDefault);
+            }
         }
 
-        return $fallback;
+        return $zh;
+    }
+
+    private static function isCopiedSimplified(string $locale, string $key, string $storedValue, string $zh, ?string $pack): bool
+    {
+        if ($locale === 'zh_cn' || $storedValue === '' || $storedValue !== $zh) {
+            return false;
+        }
+        $builtin = (string) (self::catalog()[$key][$locale] ?? '');
+        if ($builtin !== '' && $builtin !== $zh) {
+            return true;
+        }
+
+        return $pack !== null && $pack !== $zh;
     }
 
     /** @return list<string> */
@@ -381,13 +431,19 @@ class ThemeUi
         $out = [];
         foreach (self::catalog() as $key => $meta) {
             $row = is_array($prev[$key] ?? null) ? $prev[$key] : [];
+            $zh = (string) ($meta['zh_cn'] ?? '');
             foreach ($codes as $code) {
+                $pack = self::packPhrase($key, $code);
+                $builtin = (string) ($meta[$code] ?? '');
                 if (isset($input[$key]) && array_key_exists($code, $input[$key])) {
                     $value = trim((string) $input[$key][$code]);
-                    $row[$code] = $value !== '' ? $value : (string) ($meta[$code] ?? $meta['zh_cn']);
-                } elseif (! isset($row[$code]) || trim((string) $row[$code]) === '') {
-                    $row[$code] = (string) ($meta[$code] ?? $meta['zh_cn']);
+                } else {
+                    $value = trim((string) ($row[$code] ?? ''));
                 }
+                if (self::isCopiedSimplified($code, $key, $value, $zh, $pack)) {
+                    $value = '';
+                }
+                $row[$code] = $value !== '' ? $value : $builtin;
             }
             $out[$key] = $row;
         }

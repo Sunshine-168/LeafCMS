@@ -1,8 +1,13 @@
 @php
     $urls = $urls ?? [];
     $hl = $hl ?? fn (string $key, string $label) => e($label);
+    $settingsLink = static function (string $tab, string $label) use ($urls): string {
+        return !empty($urls['settings'])
+            ? '<a href="'.e(route('admin.settings.edit', ['tab' => $tab])).'">'.e($label).'</a>'
+            : e($label);
+    };
 @endphp
-<p class="muted">A theme is a front skin (Blade files + the models it declares). There is no app store — switch them on this machine in {!! $hl('themes', 'Themes') !!}. Files and tags: <a href="{{ $urls['theme'] ?? '#' }}">Templates</a>.</p>
+<p class="muted">A theme is a front skin: Blade files, plus the models it says it needs. I did not build an app store. Switch themes on this machine in {!! $hl('themes', 'Themes') !!}. Files and tags: <a href="{{ $urls['theme'] ?? '#' }}">Templates</a>.</p>
 
 <div class="help-jumps">
     @if(!empty($urls['themes']))
@@ -58,8 +63,8 @@
 <p class="muted">“Use on this site” fills gaps from <code>theme.json</code> <code>models</code> / <code>categories</code> (the Configure page can override which models). Section titles may be <code>{"zh_cn":"新闻中心","en":"News"}</code>. Multilingual / responsive can also be toggled per skin. Custom options live in <code>config</code> and are read with <code>cms_theme('key')</code>.</p>
 
 <h3>Name, logo, mobile skin</h3>
-<p class="muted">Change the site name in {!! $hl('settings', 'Settings') !!}. {!! $hl('settingsLook', 'Settings → Look') !!} uploads logo / favicon, color, footer, ICP. Empty values keep the theme defaults.</p>
-<p class="muted">A separate phone skin: under Settings → More pick “Mobile theme” (often <code>mobile</code>), optionally a mobile domain, or switch by user-agent.</p>
+<p class="muted">Change the site name in {!! $hl('settings', 'Settings') !!}. {!! $settingsLink('look', 'Settings → Appearance') !!} uploads logo / favicon, color, footer, ICP. Empty values keep the theme defaults.</p>
+<p class="muted">A separate phone skin: under {!! $settingsLink('look', 'Settings → Appearance') !!} pick “Mobile theme” (often <code>mobile</code>), optionally a mobile domain, or switch by user-agent.</p>
 
 <h3>Theme FAQ</h3>
 <div class="help-faq">

@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', '后台') - CMS</title>
+    <title>@yield('title', '后台') - {{ admin_t('brand') }}</title>
+    <link rel="icon" href="{{ asset('assets/brand/logo.svg') }}" type="image/svg+xml">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="https://cdn.staticfile.net/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('assets/css/admin.css') }}?v={{ @filemtime(public_path('assets/css/admin.css')) ?: '1' }}">
@@ -13,8 +14,6 @@
 @php
     $admin = auth('admin')->user();
     $can = fn (string $key) => $admin?->canPerm($key);
-    $switchSites = $admin ? \App\Support\AdminSiteAccess::manageableSites($admin) : collect();
-    $currentSite = \App\Support\CurrentSite::model();
     $headerInbox = $admin
         ? app(\App\Services\Admin\DashboardService::class)->headerInbox($admin)
         : ['total' => 0, 'hint' => '', 'entries' => 0, 'forms' => 0, 'comments' => 0];
@@ -29,10 +28,15 @@
     <div class="side-backdrop" id="sideBackdrop"></div>
     <aside class="side" id="adminSide">
         <div class="side-brand">
-            <span class="logo">C</span>
+            <img class="logo" src="{{ asset('assets/brand/logo.svg') }}" alt="" width="28" height="28">
             <span>{{ admin_t('brand') }}</span>
         </div>
-        <nav class="side-nav">
+        <div class="side-search">
+            <label for="admin-nav-search">{{ admin_t('nav.search') }}</label>
+            <input id="admin-nav-search" type="search" placeholder="{{ admin_t('nav.search_hint') }}" autocomplete="off" aria-controls="admin-navigation">
+            <p id="admin-nav-search-empty" hidden role="status">{{ admin_t('nav.search_empty') }}</p>
+        </div>
+        <nav class="side-nav" id="admin-navigation">
             @if($can('dashboard') || $can('stats'))
                 <div class="nav-header">{{ admin_t('nav.overview') }}</div>
                 @if($can('dashboard'))
@@ -65,7 +69,7 @@
                 @endif
                 @if($showContentMore)
                     <details class="nav-fold{{ $contentMoreOpen ? ' is-open' : '' }}" @if($contentMoreOpen) open @endif>
-                        <summary>{{ admin_t('nav.more') }}</summary>
+                        <summary>{{ admin_t('nav.content_tools') }}</summary>
                         <div class="side-sub">
                             @if($can('flags'))
                                 <x-side-link :href="route('admin.flags.index')" icon="flag" :label="admin_t('nav.flags')" :active="request()->routeIs('admin.flags.*')" />
@@ -103,7 +107,7 @@
                 @endif
                 @if($foldOpsMore)
                     <details class="nav-fold{{ $opsMoreOpen ? ' is-open' : '' }}" @if($opsMoreOpen) open @endif>
-                        <summary>{{ admin_t('nav.more') }}</summary>
+                        <summary>{{ admin_t('nav.ops_tools') }}</summary>
                         <div class="side-sub">
                 @endif
                             @if($can('friend_links'))
@@ -125,11 +129,9 @@
             @endif
 
             <div class="nav-header">{{ admin_t('nav.system') }}</div>
-            @if($can('sites'))
-                <x-side-link :href="route('admin.sites.index')" icon="globe" :label="admin_t('nav.sites')" :active="request()->routeIs('admin.sites.*')" />
-            @endif
             @if($can('settings'))
-                <x-side-link :href="route('admin.settings.edit')" icon="cog" :label="admin_t('nav.settings')" :active="request()->routeIs('admin.settings.*')" />
+                <x-side-link :href="route('admin.settings.edit')" icon="cog" :label="admin_t('nav.settings')" :active="request()->routeIs('admin.settings.edit') && request('tab') !== 'look'" />
+                <x-side-link :href="route('admin.settings.edit', ['tab' => 'look'])" icon="paint-brush" :label="admin_t('nav.appearance')" :active="request()->routeIs('admin.settings.edit') && request('tab') === 'look'" />
                 <x-side-link :href="route('admin.themes.index')" icon="palette" :label="admin_t('nav.themes')" :active="request()->routeIs('admin.themes.*')" />
             @endif
             @if($can('locales'))
@@ -144,13 +146,26 @@
             @if($can('roles'))
                 <x-side-link :href="route('admin.roles.index')" icon="user-shield" :label="admin_t('nav.roles')" :active="request()->routeIs('admin.roles.*')" />
             @endif
+            @if($can('settings') && $admin?->isSuperAdmin())
+                <x-side-link :href="route('admin.settings.maintenance')" icon="tools" :label="admin_text('系统维护')" :active="request()->routeIs('admin.settings.maintenance')" />
+            @endif
             <x-side-link :href="route('admin.help')" icon="book" :label="admin_t('nav.help')" :active="request()->routeIs('admin.help')" />
+            @if($can('settings'))
+                <div data-nav-search-only hidden>
+                    @foreach(\App\Support\SettingSections::labels() as $key => $label)
+                        <a href="{{ route('admin.settings.edit', ['tab' => $key]) }}"><i class="fas fa-cog" aria-hidden="true"></i><span>{{ $label }}</span></a>
+                    @endforeach
+                    @if($admin?->isSuperAdmin())
+                        <a href="{{ route('admin.settings.maintenance') }}"><i class="fas fa-tools" aria-hidden="true"></i><span>{{ admin_text('备份与恢复 · 系统维护') }}</span></a>
+                    @endif
+                </div>
+            @endif
         </nav>
         <div class="side-foot">
-            <span class="side-foot-avatar">{{ mb_substr($admin?->name ?? 'A', 0, 1) }}</span>
+            <span class="side-foot-avatar">{{ mb_substr($admin ? $admin->displayName() : 'A', 0, 1) }}</span>
             <span class="side-foot-meta">
-                <strong>{{ $admin?->name ?? admin_t('top.admin') }}</strong>
-                <em>{{ $admin?->adminRole?->name ?? admin_t('top.no_role') }}</em>
+                <strong>{{ $admin ? $admin->displayName() : admin_t('top.admin') }}</strong>
+                <em>{{ $admin?->adminRole?->displayName() ?? admin_t('top.no_role') }}</em>
             </span>
         </div>
     </aside>
@@ -165,26 +180,8 @@
                 @endif
             </div>
             <div class="topbar-right">
-                @if($switchSites->count() > 1)
-                    <form method="post" action="{{ route('admin.site.switch') }}" class="site-switch">
-                        @csrf
-                        <label for="top-site">{{ admin_t('top.site') }}</label>
-                        <select id="top-site" name="site_id" onchange="this.form.submit()">
-                            @foreach($switchSites as $s)
-                                <option value="{{ $s->id }}" @selected((int)($currentSite?->id) === (int)$s->id)>
-                                    {{ $s->name }}{{ $s->is_default ? '（'.admin_t('top.default').'）' : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </form>
-                @endif
-                <form method="post" action="{{ route('admin.ui-locale') }}" class="ui-switch">
-                    @csrf
-                    @foreach(\App\Support\AdminUi::options() as $code => $uiLabel)
-                        <button type="submit" name="ui_locale" value="{{ $code }}" class="{{ \App\Support\AdminUi::current() === $code ? 'is-on' : '' }}">{{ $uiLabel }}</button>
-                    @endforeach
-                </form>
-                <a class="btn btn-sm topbar-front" href="{{ url('/') }}" target="_blank" rel="noopener">{{ admin_t('top.front') }}</a>
+                @include('admin.partials.lang-pick')
+                <a class="topbar-icon topbar-front" href="{{ url('/') }}" target="_blank" rel="noopener" title="{{ admin_t('top.front') }}" aria-label="{{ admin_t('top.front') }}"><i class="fas fa-external-link-alt" aria-hidden="true"></i></a>
                 @if($headerInbox['total'] > 0)
                     <a class="topbar-bell" href="{{ route('admin.dashboard') }}#dash-todos" title="{{ $headerInbox['hint'] }}">
                         <i class="fas fa-inbox"></i>
@@ -193,11 +190,11 @@
                 @endif
                 <details class="account-menu">
                     <summary class="user-chip">
-                        <span class="avatar">{{ mb_substr($admin?->name ?? 'A', 0, 1) }}</span>
-                        <span class="user-chip-name">{{ $admin?->name }}</span>
+                        <span class="avatar">{{ mb_substr($admin ? $admin->displayName() : 'A', 0, 1) }}</span>
+                        <span class="user-chip-name">{{ $admin?->displayName() }}</span>
                     </summary>
                     <div class="account-menu-panel">
-                        <p class="muted">{{ $admin?->adminRole?->name ?? admin_t('top.admin') }}</p>
+                        <p class="muted">{{ $admin?->adminRole?->displayName() ?? admin_t('top.admin') }}</p>
                         <a class="account-menu-link" href="{{ route('admin.profile.edit') }}">{{ admin_t('top.password') }}</a>
                         <form method="post" action="{{ route('admin.logout') }}">
                             @csrf
@@ -245,12 +242,23 @@
         document.getElementById('toggleSide')?.addEventListener('click', function () {
             setOpen(!side?.classList.contains('open'));
         });
+        document.addEventListener('cms:open-nav', function () { setOpen(true); });
         backdrop?.addEventListener('click', function () { setOpen(false); });
         side?.querySelectorAll('a').forEach(function (a) {
             a.addEventListener('click', function () { setOpen(false); });
         });
+        var nav = document.getElementById('admin-navigation');
+        var current = nav?.querySelector('a.active');
+        if (nav && current) {
+            var navBox = nav.getBoundingClientRect();
+            var itemBox = current.getBoundingClientRect();
+            if (itemBox.top < navBox.top + 8 || itemBox.bottom > navBox.bottom - 8) {
+                nav.scrollTop += itemBox.top - navBox.top - (nav.clientHeight - itemBox.height) / 2;
+            }
+        }
     })();
 </script>
+<script src="{{ asset('assets/admin-navigation.js') }}?v={{ @filemtime(public_path('assets/admin-navigation.js')) ?: '1' }}" defer></script>
 @stack('scripts')
 </body>
 </html>

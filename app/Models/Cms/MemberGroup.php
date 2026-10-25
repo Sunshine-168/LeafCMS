@@ -22,16 +22,25 @@ class MemberGroup extends Model
         ];
     }
 
+    /** 分组名是库里的数据，按保存的原文显示。编辑框仍用 name。 */
+    public function displayName(): string
+    {
+        return trim((string) $this->name);
+    }
+
     /** @return array<string, string> */
     public static function permissionLabels(): array
     {
-        return [
-            'download' => '下载受保护文件',
-            'form_submit' => '提交表单',
-            'view_member_content' => '看会员内容',
-            'upload' => '上传文件',
-            'contribute' => '前台投稿',
-        ];
+        return array_map(
+            fn (string $label) => admin_text($label),
+            [
+                'download' => '下载受保护文件',
+                'form_submit' => '提交表单',
+                'view_member_content' => '看会员内容',
+                'upload' => '上传文件',
+                'contribute' => '前台投稿',
+            ]
+        );
     }
 
     /** @return list<string> */

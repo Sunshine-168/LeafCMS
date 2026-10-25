@@ -32,10 +32,10 @@ class FriendLinkController extends Controller
     {
         $result = $this->links->add($request->all());
         if (! $result['ok']) {
-            return back()->with('error', $result['msg'])->withInput();
+            return back()->with('error', $this->notice($result))->withInput();
         }
 
-        $go = redirect()->route('admin.friend-links.index')->with('status', $result['msg']);
+        $go = redirect()->route('admin.friend-links.index')->with('status', $this->notice($result));
         if (! $request->boolean('from_form')) {
             $go->with('friend_link_quick_added', true);
         }
@@ -54,23 +54,39 @@ class FriendLinkController extends Controller
     {
         $result = $this->links->save($this->links->owned($friend_link), $request->all());
         if (! $result['ok']) {
-            return back()->with('error', $result['msg'])->withInput();
+            return back()->with('error', $this->notice($result))->withInput();
         }
 
-        return redirect()->route('admin.friend-links.index')->with('status', $result['msg']);
+        return redirect()->route('admin.friend-links.index')->with('status', $this->notice($result));
     }
 
     public function destroy(RecommendItem $friend_link): RedirectResponse
     {
         $result = $this->links->delete($this->links->owned($friend_link));
 
-        return redirect()->route('admin.friend-links.index')->with('status', $result['msg']);
+        return redirect()->route('admin.friend-links.index')->with('status', $this->notice($result));
     }
 
     public function toggle(RecommendItem $friend_link): RedirectResponse
     {
         $result = $this->links->toggle($this->links->owned($friend_link));
 
-        return back()->with('status', $result['msg']);
+        return back()->with('status', $this->notice($result));
+    }
+
+    /** @param  array{msg?: string, data?: mixed}  $result */
+    private function notice(array $result): string
+    {
+        $replace = [];
+        $data = $result['data'] ?? null;
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                if (is_scalar($value)) {
+                    $replace[(string) $key] = (string) $value;
+                }
+            }
+        }
+
+        return admin_text((string) ($result['msg'] ?? ''), $replace);
     }
 }

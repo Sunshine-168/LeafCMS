@@ -126,7 +126,7 @@ class FriendLinkService
         $item->delete();
         $this->bust($block);
 
-        return Result::ok(null, $label !== '' ? '已删除「'.$label.'」' : '已删除');
+        return Result::ok($label !== '' ? ['name' => $label] : null, $label !== '' ? '已删除「:name」' : '已删除');
     }
 
     protected function bust(?Recommend $block): void

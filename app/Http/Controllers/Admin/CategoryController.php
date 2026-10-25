@@ -9,6 +9,7 @@ use App\Services\Admin\CategoryService;
 use App\Support\Locale;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
@@ -52,7 +53,7 @@ class CategoryController extends Controller
     /** 保存栏目 */
     public function store(Request $request): RedirectResponse
     {
-        $result = $this->categoryService->save(null, $request->all());
+        $result = $this->categoryService->save(null, $this->saveInput($request));
 
         return redirect()->route('admin.categories.index')->with(
             $result['ok'] ? 'status' : 'error',
@@ -75,12 +76,35 @@ class CategoryController extends Controller
     /** 更新栏目 */
     public function update(Request $request, Category $category): RedirectResponse
     {
-        $result = $this->categoryService->save($category, $request->all());
+        $result = $this->categoryService->save($category, $this->saveInput($request));
 
         return redirect()->route('admin.categories.index')->with(
             $result['ok'] ? 'status' : 'error',
             $result['msg']
         );
+    }
+
+    private function saveInput(Request $request): array
+    {
+        $request->validate(['purpose' => 'nullable|in:article,single,link,hub,custom']);
+        $input = $request->all();
+        $purpose = $request->input('purpose', 'custom');
+        if (in_array($purpose, ['article', 'single', 'link', 'hub'], true)) {
+            $input['type'] = $purpose === 'article' ? 'list' : $purpose;
+            $input['model_id'] = null;
+            if (in_array($purpose, ['article', 'single'], true)) {
+                $model = ContentModel::query()->where('slug', $purpose === 'single' ? 'page' : 'article')->where('is_active', true)->first();
+                if (! $model) {
+                    throw ValidationException::withMessages(['purpose' => admin_text('该用途的模型未启用，请选择自定义内容')]);
+                }
+                $input['model_id'] = $model->id;
+            }
+            if ($purpose === 'link') {
+                $request->validate(['url' => 'required|url:http,https']);
+            }
+        }
+
+        return $input;
     }
 
     /** 删除栏目 */

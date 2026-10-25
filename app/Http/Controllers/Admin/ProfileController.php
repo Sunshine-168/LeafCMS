@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminUserService;
+use App\Support\AdminUi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function __construct(private readonly AdminUserService $users)
-    {
-    }
+    public function __construct(private readonly AdminUserService $users) {}
 
     public function edit(): View
     {
@@ -25,9 +25,9 @@ class ProfileController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:100',
-            'ui_locale' => 'nullable|in:zh_cn,en',
+            'ui_locale' => ['nullable', Rule::in(AdminUi::codes())],
         ], [
-            'name.required' => '请填写名称',
+            'name.required' => admin_text('请填写名称'),
         ]);
 
         $user = auth('admin')->user();
@@ -38,7 +38,7 @@ class ProfileController extends Controller
         if ($request->filled('ui_locale')) {
             $ui = $this->users->updateSelfUiLocale($user, (string) $request->input('ui_locale'));
             if ($ui['ok'] && ! empty($ui['data']['cookie'])) {
-                return back()->with('status', $result['msg'])->withCookie($ui['data']['cookie']);
+                return back()->with('status', $ui['msg'])->withCookie($ui['data']['cookie']);
             }
         }
 
@@ -51,10 +51,10 @@ class ProfileController extends Controller
             'current_password' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ], [
-            'current_password.required' => '请填写当前密码',
-            'password.required' => '请填写新密码',
-            'password.min' => '新密码至少 8 位',
-            'password.confirmed' => '两次新密码不一致',
+            'current_password.required' => admin_text('请填写当前密码'),
+            'password.required' => admin_text('请填写新密码'),
+            'password.min' => admin_text('新密码至少 8 位'),
+            'password.confirmed' => admin_text('两次新密码不一致'),
         ]);
 
         $user = auth('admin')->user();

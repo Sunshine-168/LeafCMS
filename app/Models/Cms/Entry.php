@@ -12,10 +12,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Scout\Searchable;
 
 class Entry extends Model
 {
     use BelongsToSite;
+    use Searchable;
     use SoftDeletes;
     use Translatable;
 
@@ -28,6 +30,7 @@ class Entry extends Model
         'status', 'sort_order', 'views', 'downloads_count', 'clicks',
         'is_homepage', 'published_at',
         'preview_token', 'preview_expires_at',
+        'draft_payload', 'draft_state', 'updated_by', 'locale_sync', 'translation_flags',
     ];
 
     protected $appends = ['url'];
@@ -45,7 +48,22 @@ class Entry extends Model
             'is_homepage' => 'boolean',
             'published_at' => 'datetime',
             'preview_expires_at' => 'datetime',
+            'draft_payload' => 'array',
+            'locale_sync' => 'array',
+            'translation_flags' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Entry $entry): void {
+            $indexed = trim((string) $entry->search_text) !== '';
+            $sourceChanged = $entry->isDirty(['title', 'excerpt', 'content', 'slug']);
+            if ($indexed && ! $sourceChanged) {
+                return;
+            }
+            $entry->rebuildSearchText();
+        });
     }
 
     public function category(): BelongsTo
@@ -148,13 +166,38 @@ class Entry extends Model
         return $this->status === 'pending';
     }
 
+    public function hasWorkingDraft(): bool
+    {
+        return is_array($this->draft_payload) && $this->draft_payload !== [];
+    }
+
+    /** 表单和预览读修改稿，不写回已发布字段。 */
+    public function overlayWorkingDraft(): void
+    {
+        $payload = $this->draft_payload;
+        if (! is_array($payload) || $payload === []) {
+            return;
+        }
+        foreach (['title', 'slug', 'excerpt', 'content', 'meta_title', 'meta_description', 'cover', 'flags', 'attrs', 'category_id', 'sort_order', 'is_homepage'] as $field) {
+            if (array_key_exists($field, $payload)) {
+                $this->setAttribute($field, $payload[$field]);
+            }
+        }
+        if (isset($payload['category_ids']) && is_array($payload['category_ids'])) {
+            $this->setRelation('categories', Category::query()->whereIn('id', array_map('intval', $payload['category_ids']))->get());
+        }
+        if (isset($payload['tag_ids']) && is_array($payload['tag_ids'])) {
+            $this->setRelation('tags', Tag::query()->whereIn('id', array_map('intval', $payload['tag_ids']))->get());
+        }
+    }
+
     public static function statusLabel(string $status): string
     {
         return match ($status) {
-            'published' => '已发布',
-            'pending' => '待审',
-            'draft' => '草稿',
-            default => $status,
+            'published' => admin_text('已发布'),
+            'pending' => admin_text('待审'),
+            'draft' => admin_text('草稿'),
+            default => admin_text($status),
         };
     }
 
@@ -236,6 +279,26 @@ class Entry extends Model
             UrlMode::MODEL_CAT_ENTRY => $prefix.'/'.($modelSlug ?: 'item').'/'.$catSlug.'/'.$slug,
             default => $prefix.'/'.$catSlug.'/'.$slug,
         };
+    }
+
+    /** 草稿、待审、未到点的定时发布和回收站都不进索引。 */
+    public function shouldBeSearchable(): bool
+    {
+        return ! $this->trashed() && $this->isLive();
+    }
+
+    /**
+     * Scout 数据库驱动对这些字段做 LIKE。
+     * search_text 已含各语言标题、摘要和正文，不含修改稿。
+     * site_id 用搜索条件限制，不放进 LIKE，避免数字命中站点 ID。
+     *
+     * @return array<string, string>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'search_text' => (string) ($this->search_text ?? ''),
+        ];
     }
 
     public function rebuildSearchText(): void

@@ -1,9 +1,15 @@
 @php
     $siteId = (int) ($siteId ?? 1);
+    $siteRoot = str_replace('\\', '/', rtrim(base_path(), '/\\'));
     $compact = (bool) ($compact ?? false);
     $copy = admin_t('guide.copy');
     $urls = $urls ?? [];
     $hl = $hl ?? fn (string $key, string $label) => e($label);
+    $settingsLink = static function (string $tab, string $label) use ($urls): string {
+        return !empty($urls['settings'])
+            ? '<a href="'.e(route('admin.settings.edit', ['tab' => $tab])).'">'.e($label).'</a>'
+            : e($label);
+    };
 @endphp
 <div class="deploy-guide">
     @unless($compact)
@@ -46,13 +52,13 @@ DB_PASSWORD=use-a-strong-password</code></pre>
     <p class="hint">Trying locally can stay on SQLite (<code>DB_CONNECTION=sqlite</code>). After editing <code>.env</code>, run <code>php artisan config:clear</code>.</p>
 
     <h3>nginx</h3>
-    <p class="muted">The document root must be <code>public</code>, not the project root. Replace <code>/var/www/leafcms</code> and the PHP-FPM socket.</p>
+    <p class="muted">The document root must be <code>public</code>, not the project root. The path below is this install's directory. Replace the PHP-FPM socket if yours is different.</p>
     <div class="code">
         <button type="button" class="copy" data-copy>{{ $copy }}</button>
         <pre><code>server {
     listen 80;
     server_name www.example.com;
-    root /var/www/leafcms/public;
+    root {{ $siteRoot }}/public;
     index index.php;
     charset utf-8;
     client_max_body_size 32m;
@@ -73,21 +79,21 @@ DB_PASSWORD=use-a-strong-password</code></pre>
     }
 }</code></pre>
     </div>
-    <p class="hint">The first <code>try_files</code> line prefers disk HTML from the admin. Missing files go to PHP. For extra sites, change <code>site_{{ $siteId }}</code>. Terminate HTTPS in front or in your panel.</p>
+    <p class="hint">The first <code>try_files</code> line prefers disk HTML from the admin. Missing files go to PHP. Static files live in <code>site_{{ $siteId }}</code>. Terminate HTTPS in front or in your panel.</p>
     <p class="muted">Set <code>APP_URL=https://www.example.com</code>, <code>APP_ENV=production</code>, <code>APP_DEBUG=false</code>. Behind a reverse proxy, also set <code>TRUST_PROXIES=*</code>.</p>
 
     <h3>Search engines and robots.txt</h3>
     <p class="muted">The front URL is <code>/robots.txt</code>. By default the home page is allowed; <code>/admin</code>, <code>/install</code>, <code>/member</code>, and <code>/preview</code> are not, and a sitemap line is included for each language. While the site is closed the whole file is <code>Disallow: /</code>.</p>
-    <p class="muted">To block extra paths, add “robots.txt extra rules” under {!! $hl('settingsMore', 'Settings → More') !!}, for example:</p>
+    <p class="muted">To block extra paths, add “robots.txt extra rules” under {!! $settingsLink('seo', 'Settings → Search and analytics') !!}, for example:</p>
     <div class="code">
         <button type="button" class="copy" data-copy>{{ $copy }}</button>
         <pre><code>Disallow: /private
 Disallow: /drafts</code></pre>
     </div>
-    <p class="hint">No HTML tags. About 40 lines, 200 characters each. Check the live <code>/robots.txt</code> after saving. This is not the same as the page <code>&lt;meta name="robots"&gt;</code>. After install, pick which sections and entries to list under Operations → More → Sitemap.</p>
+    <p class="hint">No HTML tags. About 40 lines, 200 characters each. Check the live <code>/robots.txt</code> after saving. This is not the same as the page <code>&lt;meta name="robots"&gt;</code>. After install, pick which sections and entries to list under Operations → Operations tools → Sitemap.</p>
 
     <h3>Object storage for uploads</h3>
-    <p class="muted">Files go to <code>storage/app/public</code> by default (<code>php artisan storage:link</code>). To only change the public host, set the CDN field under {!! $hl('settingsMore', 'Settings → More') !!}.</p>
+    <p class="muted">Files go to <code>storage/app/public</code> by default (<code>php artisan storage:link</code>). To only change the public host, set the CDN field under {!! $settingsLink('api', 'Settings → CDN and API') !!}.</p>
     <p class="muted">For Aliyun OSS / Tencent COS / AWS S3: <code>composer require league/flysystem-aws-s3-v3</code>, then in <code>.env</code>:</p>
     <div class="code">
         <button type="button" class="copy" data-copy>{{ $copy }}</button>

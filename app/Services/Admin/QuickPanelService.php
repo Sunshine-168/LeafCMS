@@ -40,7 +40,6 @@ class QuickPanelService
             'sitemap' => ['title' => '地图', 'icon' => 'fas fa-map', 'route' => 'admin.sitemap.edit', 'url' => null, 'perm' => 'sitemap'],
             'recycle' => ['title' => '回收站', 'icon' => 'fas fa-trash-alt', 'route' => 'admin.recycle.index', 'url' => null, 'perm' => 'recycle'],
             'html_cache' => ['title' => '缓存', 'icon' => 'fas fa-bolt', 'route' => 'admin.html-cache.edit', 'url' => null, 'perm' => 'html_cache'],
-            'sites' => ['title' => '站点', 'icon' => 'fas fa-globe', 'route' => 'admin.sites.index', 'url' => null, 'perm' => 'sites'],
             'locales' => ['title' => '语言', 'icon' => 'fas fa-language', 'route' => 'admin.locales.index', 'url' => null, 'perm' => 'locales'],
         ];
     }
@@ -109,7 +108,7 @@ class QuickPanelService
             }
             $out[] = [
                 'key' => $key,
-                'title' => $item['title'],
+                'title' => $this->presentTitle($key, $item['title']),
                 'icon' => $item['icon'],
                 'url' => $url,
             ];
@@ -135,7 +134,7 @@ class QuickPanelService
             }
         });
 
-        return Result::ok(null, $keys === [] ? '已恢复为默认快捷面板（未勾选时）' : '快捷面板已保存');
+        return Result::ok(null, $keys === [] ? admin_text('已恢复为默认快捷面板（未勾选时）') : admin_text('快捷面板已保存'));
     }
 
     /** @return list<array{key:string,title:string,icon:string,selected:bool}> */
@@ -154,12 +153,22 @@ class QuickPanelService
             }
             $out[] = [
                 'key' => $key,
-                'title' => $item['title'],
+                'title' => $this->presentTitle($key, $item['title']),
                 'icon' => $item['icon'],
                 'selected' => in_array($key, $selected, true),
             ];
         }
 
         return $out;
+    }
+
+    /** 导航主题名已占用「导航」的译文，菜单快捷项改走侧栏用语。 */
+    private function presentTitle(string $key, string $source): string
+    {
+        if ($key === 'menus') {
+            return admin_t('nav.menus');
+        }
+
+        return admin_text($source);
     }
 }

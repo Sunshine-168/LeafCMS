@@ -51,7 +51,11 @@
     editor.initEditors = function () {
         if (!window.tinymce) return;
         var self = this;
+        var languages = {de: 'de', en: 'en', es: 'es', fr: 'fr_FR', ja: 'ja', ko: 'ko_KR', pt: 'pt_BR', zh_cn: 'zh_CN', zh_tw: 'zh_TW'};
+        var language = languages[@js(\App\Support\AdminUi::current())] || 'en';
         tinymce.init({
+            language: language,
+            language_url: language === 'en' ? undefined : @js(asset('assets/vendor/tinymce-langs')) + '/' + language + '.js',
             selector: 'textarea.cms-editor',
             height: 360,
             menubar: false,
@@ -119,7 +123,14 @@ document.addEventListener('DOMContentLoaded', function () {
             urls.forEach(function (url) {
                 var wrap = document.createElement('div');
                 wrap.className = 'images-thumb';
-                wrap.innerHTML = '<img src="' + url + '" alt=""><button type="button" title="移除">&times;</button>';
+                var image = document.createElement('img');
+                image.src = url;
+                image.alt = '';
+                var remove = document.createElement('button');
+                remove.type = 'button';
+                remove.title = @js(admin_text('移除'));
+                remove.textContent = '×';
+                wrap.append(image, remove);
                 wrap.querySelector('button').addEventListener('click', function () {
                     input.value = parseUrls(input.value).filter(function (u) { return u !== url; }).join(',');
                     render();

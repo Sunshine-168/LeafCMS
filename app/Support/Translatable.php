@@ -17,6 +17,12 @@ trait Translatable
         return $value ?? $default;
     }
 
+    /** 列表显示内容语言里的标题。库里的句子不进界面词典，编辑框仍用各语言原文。 */
+    public function uiTitle(): string
+    {
+        return trim((string) $this->t('title'));
+    }
+
     public function translation(string $field, string $locale): string
     {
         $value = $this->{$field};

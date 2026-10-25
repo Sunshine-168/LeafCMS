@@ -10,9 +10,9 @@ use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EntryController;
 use App\Http\Controllers\Admin\FlagController;
-use App\Http\Controllers\Admin\FriendLinkController;
 use App\Http\Controllers\Admin\FormController;
 use App\Http\Controllers\Admin\FormSubmissionController;
+use App\Http\Controllers\Admin\FriendLinkController;
 use App\Http\Controllers\Admin\HelpController;
 use App\Http\Controllers\Admin\HtmlCacheController;
 use App\Http\Controllers\Admin\LocaleController;
@@ -28,7 +28,6 @@ use App\Http\Controllers\Admin\RecycleController;
 use App\Http\Controllers\Admin\RedirectController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\SiteController;
 use App\Http\Controllers\Admin\SitemapController;
 use App\Http\Controllers\Admin\StatController;
 use App\Http\Controllers\Admin\TagController;
@@ -48,7 +47,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::put('profile/password', [ProfileController::class, 'password'])->name('profile.password');
-        Route::post('site/switch', [SiteController::class, 'switch'])->name('site.switch');
         Route::post('ui-locale', [LocaleController::class, 'switchUi'])->name('ui-locale');
         Route::get('help', [HelpController::class, 'index'])->name('help');
         Route::get('/', [DashboardController::class, 'index'])->middleware('admin.perm:dashboard')->name('dashboard');
@@ -58,13 +56,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('quick-panels', [QuickPanelController::class, 'update'])->name('quick-panels.update');
         });
 
-        Route::middleware('admin.perm:sites')->group(function () {
-            Route::post('sites/{site}/toggle', [SiteController::class, 'toggle'])->name('sites.toggle');
-            Route::post('sites/{site}/default', [SiteController::class, 'makeDefault'])->name('sites.default');
-            Route::resource('sites', SiteController::class)->except(['show']);
-        });
-
         Route::middleware('admin.perm:entries')->group(function () {
+            Route::get('entries/{entry}/preview', [EntryController::class, 'preview'])->name('entries.preview.show')->whereNumber('entry');
             Route::post('entries/{entry}/preview', [EntryController::class, 'issuePreview'])->name('entries.preview')->whereNumber('entry');
             Route::post('entries/{entry}/revisions/{revision}/restore', [EntryController::class, 'restoreRevision'])->name('entries.revisions.restore')->whereNumber('entry');
             Route::post('entries/batch', [EntryController::class, 'batch'])->name('entries.batch');
@@ -161,6 +154,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('models/{model}', [ModelController::class, 'update'])->name('models.update');
             Route::delete('models/{model}', [ModelController::class, 'destroy'])->name('models.destroy');
             Route::post('models/{model}/copy', [ModelController::class, 'copy'])->name('models.copy');
+            Route::post('models/{model}/toggle', [ModelController::class, 'toggle'])->name('models.toggle');
             Route::get('models/{model}/export', [ModelController::class, 'export'])->name('models.export');
             Route::get('models/{model}/fields/create', [ModelController::class, 'createField'])->name('models.fields.create');
             Route::post('models/{model}/fields', [ModelController::class, 'storeField'])->name('models.fields.store');
@@ -195,6 +189,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         Route::middleware('admin.perm:settings')->group(function () {
             Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
+            Route::get('maintenance', [SettingController::class, 'maintenance'])->name('settings.maintenance');
             Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
             Route::get('themes', [ThemeController::class, 'index'])->name('themes.index');
             Route::post('themes', [ThemeController::class, 'store'])->name('themes.store');

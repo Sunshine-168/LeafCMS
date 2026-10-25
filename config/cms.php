@@ -20,9 +20,9 @@ return [
     'auth_captcha' => (bool) env('CMS_AUTH_CAPTCHA', true),
 
     /*
-    | 后台任务运行模式（多站点可按站切换）
+    | 后台任务运行模式
     | schedule = schedule:run 进程内同步执行（不需 queue:work）
-    | queue    = 调度只投递队列，由 queue:work 消费（多站可共用 worker）
+    | queue    = 调度只投递队列，由 queue:work 消费
     | off      = 不自动跑，仅手动 artisan / 后台按钮
     */
     'runtime' => [

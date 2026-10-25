@@ -19,6 +19,7 @@
             'tags' => admin_t('guide.topic_tags'),
         ],
         admin_t('guide.group_install') => [
+            'baota' => admin_t('guide.topic_baota'),
             'env' => admin_t('guide.topic_env'),
             'schedule' => admin_t('guide.topic_schedule'),
             'laravel' => admin_t('guide.topic_laravel'),

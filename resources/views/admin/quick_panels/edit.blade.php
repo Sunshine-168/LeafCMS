@@ -2,7 +2,7 @@
 @section('title', admin_t('crud.quick_panel'))
 @section('icon', 'th')
 @section('content')
-    <p class="muted">勾选首页「接下来做什么」里的动作（按任务命名，仅列出你有权限的项）。首页最多显示 8 个。全部取消并保存将恢复默认组合。</p>
+    <p class="muted">{{ admin_text('勾选首页「接下来做什么」里的动作（按任务命名，仅列出你有权限的项）。首页最多显示 8 个。全部取消并保存将恢复默认组合。') }}</p>
     <form method="post" action="{{ route('admin.quick-panels.update') }}">
         @csrf
         @method('PUT')
@@ -16,8 +16,8 @@
             @endforeach
         </div>
         <p>
-            <button class="btn" type="submit">保存</button>
-            <a class="btn btn-muted" href="{{ route('admin.dashboard') }}">返回仪表盘</a>
+            <button class="btn" type="submit">{{ admin_text('保存') }}</button>
+            <a class="btn btn-muted" href="{{ route('admin.dashboard') }}">{{ admin_text('返回仪表盘') }}</a>
         </p>
     </form>
 @endsection

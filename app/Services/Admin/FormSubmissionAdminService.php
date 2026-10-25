@@ -68,31 +68,31 @@ class FormSubmissionAdminService
         $submission->save();
 
         if (! $sendReply) {
-            return Result::ok($submission, '备注已保存');
+            return Result::ok($submission, admin_text('备注已保存'));
         }
 
         $email = $submission->guestEmail();
         if (! $email) {
-            return Result::fail('这条留言没有可用邮箱，无法发信。备注已保存。');
+            return Result::fail(admin_text('这条留言没有可用邮箱，无法发信。备注已保存。'));
         }
         if ($note === '') {
-            return Result::fail('请填写回复内容再发送。');
+            return Result::fail(admin_text('请填写回复内容再发送。'));
         }
 
-        $formName = $submission->form?->name ?: '留言';
+        $formName = $submission->form?->name ?: admin_text('留言');
         if (! $this->opsNotify->formReply($email, $formName, $note)) {
-            return Result::fail('邮件发送失败。请先在系统设置里配好 SMTP。备注已保存。');
+            return Result::fail(admin_text('邮件发送失败。请先在系统设置里配好 SMTP。备注已保存。'));
         }
         $submission->replied_at = now();
         $submission->save();
 
-        return Result::ok($submission, '已保存并发送回复');
+        return Result::ok($submission, admin_text('已保存并发送回复'));
     }
 
     public function delete(FormSubmission $submission): array
     {
         $submission->delete();
 
-        return Result::ok(null, '已删除');
+        return Result::ok(null, admin_text('已删除'));
     }
 }

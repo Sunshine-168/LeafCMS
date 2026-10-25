@@ -30,6 +30,6 @@ class SitemapController extends Controller
     {
         $result = $this->sitemaps->save($request->all());
 
-        return redirect()->route('admin.sitemap.edit')->with('status', $result['msg']);
+        return redirect()->route('admin.sitemap.edit')->with('status', admin_text((string) ($result['msg'] ?? '')));
     }
 }

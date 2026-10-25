@@ -5,6 +5,7 @@ namespace App\Services\Cms;
 use App\Models\Cms\Category;
 use App\Models\Cms\Entry;
 use App\Models\Cms\Setting;
+use App\Support\AdminUi;
 use App\Support\CurrentSite;
 use App\Support\Locale;
 use Illuminate\Contracts\Cache\Repository;
@@ -216,11 +217,11 @@ class HtmlCacheService
     public static function ttlOptions(): array
     {
         return [
-            0 => '改内容后马上换新',
-            900 => '15 分钟',
-            3600 => '1 小时',
-            21600 => '6 小时',
-            86400 => '1 天',
+            0 => admin_text('改内容后马上换新'),
+            900 => admin_text(':n 分钟', ['n' => 15]),
+            3600 => admin_text(':n 小时', ['n' => 1]),
+            21600 => admin_text(':n 小时', ['n' => 6]),
+            86400 => admin_text(':n 天', ['n' => 1]),
         ];
     }
 
@@ -228,21 +229,21 @@ class HtmlCacheService
     {
         $reason = (string) ($bust['reason'] ?? '');
         if ($reason === '') {
-            return '还没有刷新过';
+            return admin_text('还没有刷新过');
         }
 
         return match (true) {
-            $reason === 'admin:clear' => '你手动清空了页面缓存',
-            $reason === 'admin:global-clear' => '清空了缓存',
-            $reason === 'settings' => '改了站点设置',
-            $reason === 'backup-restore' => '还原了备份',
-            $reason === 'artisan:html-clear' => '用命令行清空了缓存',
-            str_starts_with($reason, 'entry:batch') => '批量改了内容',
-            str_starts_with($reason, 'entry:') => '改了内容',
-            str_starts_with($reason, 'category:') => '改了栏目',
-            str_starts_with($reason, 'collector:') => '采集写入了内容',
-            str_starts_with($reason, 'recommend:') => '改了推荐位',
-            default => '内容有更新',
+            $reason === 'admin:clear' => admin_text('你手动清空了页面缓存'),
+            $reason === 'admin:global-clear' => admin_text('清空了缓存'),
+            $reason === 'settings' => admin_text('改了站点设置'),
+            $reason === 'backup-restore' => admin_text('还原了备份'),
+            $reason === 'artisan:html-clear' => admin_text('用命令行清空了缓存'),
+            str_starts_with($reason, 'entry:batch') => admin_text('批量改了内容'),
+            str_starts_with($reason, 'entry:') => admin_text('改了内容'),
+            str_starts_with($reason, 'category:') => admin_text('改了栏目'),
+            str_starts_with($reason, 'collector:') => admin_text('采集写入了内容'),
+            str_starts_with($reason, 'recommend:') => admin_text('改了推荐位'),
+            default => admin_text('内容有更新'),
         };
     }
 
@@ -290,6 +291,9 @@ class HtmlCacheService
                 });
 
             Locale::set($previous);
+            if (auth('admin')->check()) {
+                AdminUi::apply();
+            }
             $urls = array_values(array_unique($urls));
             $ok = 0;
             $fail = 0;
@@ -320,6 +324,9 @@ class HtmlCacheService
                 CurrentSite::set($site);
             }
             Locale::set($previous);
+            if (auth('admin')->check()) {
+                AdminUi::apply();
+            }
         }
     }
 

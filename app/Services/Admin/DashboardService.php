@@ -7,7 +7,6 @@ use App\Models\Cms\Collector;
 use App\Models\Cms\Comment;
 use App\Models\Cms\Entry;
 use App\Models\Cms\FormSubmission;
-use App\Models\Cms\Setting;
 use App\Models\Cms\StatHit;
 use App\Services\Cms\HtmlCacheService;
 use App\Services\Cms\Stats\StatService;
@@ -28,8 +27,7 @@ class DashboardService
         private readonly EntryService $entries,
         private readonly FormSubmissionAdminService $forms,
         private readonly CommentAdminService $comments,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{
@@ -63,6 +61,7 @@ class DashboardService
             'health' => $modules['health'] ? $this->health() : null,
             'quickNav' => $quickNav,
             'quickOverflow' => max(0, count($nav) - count($quickNav)),
+            'desk' => $this->desk($admin),
         ];
     }
 
@@ -93,7 +92,9 @@ class DashboardService
         $key = "admin.inbox.{$siteId}.{$admin->id}.{$epoch}";
 
         return Cache::remember($key, 45, function () use ($admin, $modules) {
-            $entries = ! empty($modules['content']) ? $this->entries->pendingCount() : 0;
+            $entries = ! empty($modules['content'])
+                ? $this->entries->pendingCount() + Entry::query()->where('draft_state', 'pending')->count()
+                : 0;
             $forms = $admin->canPerm('form_submissions') ? $this->forms->unreadCount() : 0;
             $comments = $admin->canPerm('comments') ? $this->comments->pendingCount() : 0;
 
@@ -128,17 +129,17 @@ class DashboardService
         $counts = $this->todoCounts($admin, $this->modules($admin));
         $parts = [];
         if ($counts['entries'] > 0) {
-            $parts[] = '待审 '.$counts['entries'];
+            $parts[] = admin_text('待审').' '.$counts['entries'];
         }
         if ($counts['forms'] > 0) {
-            $parts[] = '留言 '.$counts['forms'];
+            $parts[] = admin_text('留言 :n', ['n' => $counts['forms']]);
         }
         if ($counts['comments'] > 0) {
-            $parts[] = '评论 '.$counts['comments'];
+            $parts[] = admin_text('评论 :n', ['n' => $counts['comments']]);
         }
 
         return $counts + [
-            'hint' => $parts !== [] ? implode(' · ', $parts) : '没有待办',
+            'hint' => $parts !== [] ? implode(' · ', $parts) : admin_text('没有待办'),
         ];
     }
 
@@ -155,7 +156,7 @@ class DashboardService
             $yesterday = $overview['yesterday'];
             $cards[] = [
                 'key' => 'pv',
-                'label' => '今日 PV',
+                'label' => admin_text('今日 PV'),
                 'value' => $today['pv'],
                 'delta' => $this->stats->change($today['pv'], $yesterday['pv']),
                 'hint' => null,
@@ -165,7 +166,7 @@ class DashboardService
             ];
             $cards[] = [
                 'key' => 'uv',
-                'label' => '今日 UV',
+                'label' => admin_text('今日 UV'),
                 'value' => $today['uv'],
                 'delta' => $this->stats->change($today['uv'], $yesterday['uv']),
                 'hint' => null,
@@ -177,21 +178,22 @@ class DashboardService
         if ($modules['todos']) {
             $parts = [];
             if ($admin->canPerm('entries')) {
-                $parts[] = '待审 '.$todoCounts['entries'];
+                $parts[] = admin_text('待审').' '.$todoCounts['entries'];
             }
             if ($admin->canPerm('form_submissions')) {
-                $parts[] = '留言 '.$todoCounts['forms'];
+                $parts[] = admin_text('留言 :n', ['n' => $todoCounts['forms']]);
             }
             if ($admin->canPerm('comments')) {
-                $parts[] = '评论 '.$todoCounts['comments'];
+                $parts[] = admin_text('评论 :n', ['n' => $todoCounts['comments']]);
             }
+            $todoHref = '#dash-todos';
             $cards[] = [
                 'key' => 'todo',
-                'label' => '待处理',
+                'label' => admin_text('待处理'),
                 'value' => $todoCounts['total'],
                 'delta' => null,
                 'hint' => implode(' · ', $parts),
-                'href' => '#dash-todos',
+                'href' => $todoHref,
                 'icon' => 'fa-inbox',
                 'color' => $todoCounts['total'] > 0 ? 'orange' : 'green',
             ];
@@ -200,10 +202,10 @@ class DashboardService
             $health = $this->contentHealth();
             $cards[] = [
                 'key' => 'content',
-                'label' => '内容健康',
+                'label' => admin_text('已发布内容'),
                 'value' => $health['published'],
                 'delta' => null,
-                'hint' => '已发布 '.$health['published'].' · 定时 '.$health['scheduled'].' · 草稿 '.$health['draft'],
+                'hint' => admin_text('已发布').' '.$health['published'].' · '.admin_text('定时').' '.$health['scheduled'].' · '.admin_text('草稿').' '.$health['draft'],
                 'href' => route('admin.entries.index'),
                 'icon' => 'fa-file-alt',
                 'color' => 'purple',
@@ -216,10 +218,10 @@ class DashboardService
             $fail = Collector::query()->where('is_active', true)->where('last_status', 'fail')->count();
             $cards[] = [
                 'key' => 'spider',
-                'label' => '今日蜘蛛',
+                'label' => admin_text('今日蜘蛛'),
                 'value' => $today['spider_pv'],
                 'delta' => $this->stats->change($today['spider_pv'], $yesterday['spider_pv']),
-                'hint' => $fail > 0 ? $fail.' 个采集失败' : null,
+                'hint' => $fail > 0 ? admin_text(':n 个采集失败', ['n' => $fail]) : null,
                 'href' => route('admin.stats.spiders'),
                 'icon' => 'fa-spider',
                 'color' => 'orange',
@@ -248,6 +250,32 @@ class DashboardService
         ];
     }
 
+    /** @return array{drafts:Collection,recent:Collection,scheduled:Collection} */
+    public function desk(AdminUser $admin): array
+    {
+        $empty = collect();
+        if (! $admin->canPerm('entries')) {
+            return ['drafts' => $empty, 'recent' => $empty, 'scheduled' => $empty];
+        }
+        $base = Entry::query()->with('modelDef');
+        $slugs = app(ThemeCatalog::class)->currentModelSlugs();
+        if ($slugs !== []) {
+            $base->whereHas('modelDef', fn ($query) => $query->whereIn('slug', $slugs));
+        }
+        AdminCategoryScope::applyToEntries($base);
+        $mine = (int) $admin->id;
+        $recent = (clone $base)->where('updated_by', $mine)->orderByDesc('updated_at')->limit(5)->get();
+        if ($recent->isEmpty()) {
+            $recent = (clone $base)->orderByDesc('updated_at')->limit(5)->get();
+        }
+
+        return [
+            'drafts' => (clone $base)->where('status', 'draft')->where('updated_by', $mine)->orderByDesc('updated_at')->limit(5)->get(),
+            'recent' => $recent,
+            'scheduled' => (clone $base)->where('status', 'published')->where('published_at', '>', now())->orderBy('published_at')->limit(5)->get(),
+        ];
+    }
+
     /** @return list<array{kind:string,kind_label:string,title:string,time:mixed,url:string}> */
     public function todos(AdminUser $admin): array
     {
@@ -259,8 +287,19 @@ class DashboardService
             foreach ($q->get() as $entry) {
                 $items[] = [
                     'kind' => 'entry',
-                    'kind_label' => '待审稿',
-                    'title' => (string) ($entry->t('title') ?: '未命名'),
+                    'kind_label' => admin_text('待审稿'),
+                    'title' => (string) ($entry->t('title') ?: admin_text('未命名')),
+                    'time' => $entry->updated_at,
+                    'url' => route('admin.entries.edit', $entry),
+                ];
+            }
+            $revisions = Entry::query()->where('draft_state', 'pending')->orderByDesc('updated_at')->limit(8);
+            AdminCategoryScope::applyToEntries($revisions);
+            foreach ($revisions->get() as $entry) {
+                $items[] = [
+                    'kind' => 'entry',
+                    'kind_label' => admin_text('修改稿'),
+                    'title' => (string) ($entry->t('title') ?: admin_text('未命名')),
                     'time' => $entry->updated_at,
                     'url' => route('admin.entries.edit', $entry),
                 ];
@@ -270,7 +309,7 @@ class DashboardService
             foreach (FormSubmission::query()->where('is_read', false)->with('form')->orderByDesc('id')->limit(8)->get() as $row) {
                 $items[] = [
                     'kind' => 'form',
-                    'kind_label' => '未读留言',
+                    'kind_label' => admin_text('未读留言'),
                     'title' => $this->submissionTitle($row),
                     'time' => $row->created_at,
                     'url' => route('admin.form-submissions.show', $row),
@@ -279,10 +318,10 @@ class DashboardService
         }
         if ($admin->canPerm('comments')) {
             foreach (Comment::query()->pending()->with('entry')->orderByDesc('id')->limit(8)->get() as $row) {
-                $entryTitle = $row->entry ? (string) $row->entry->t('title') : '评论';
+                $entryTitle = $row->entry ? (string) $row->entry->t('title') : admin_text('评论');
                 $items[] = [
                     'kind' => 'comment',
-                    'kind_label' => '待审评论',
+                    'kind_label' => admin_text('待审评论'),
                     'title' => $entryTitle.' · '.Str::limit(strip_tags((string) $row->content), 36),
                     'time' => $row->created_at,
                     'url' => route('admin.comments.index', ['status' => 'pending']),
@@ -318,16 +357,16 @@ class DashboardService
                 ->limit(5);
             AdminCategoryScope::applyToEntries($published);
             foreach ($published->get() as $entry) {
-                $label = '已发布';
+                $label = admin_text('已发布');
                 if ($entry->member_id) {
-                    $label = '会员投稿';
+                    $label = admin_text('会员投稿');
                 } elseif ($entry->collector_id) {
-                    $label = '采集写入';
+                    $label = admin_text('采集写入');
                 }
                 $items[] = [
                     'kind' => 'publish',
                     'kind_label' => $label,
-                    'title' => (string) ($entry->t('title') ?: '未命名'),
+                    'title' => (string) ($entry->t('title') ?: admin_text('未命名')),
                     'time' => $entry->published_at ?: $entry->updated_at,
                     'url' => route('admin.entries.edit', $entry),
                 ];
@@ -348,7 +387,7 @@ class DashboardService
             if ($failed > 0 && $admin->canPerm('collectors')) {
                 $alerts[] = [
                     'level' => 'warn',
-                    'title' => $failed.' 个采集任务最近失败',
+                    'title' => admin_text(':n 个采集任务最近失败', ['n' => $failed]),
                     'url' => route('admin.collectors.index'),
                 ];
             }
@@ -358,7 +397,7 @@ class DashboardService
             if ($scheduled >= 3) {
                 $alerts[] = [
                     'level' => 'info',
-                    'title' => $scheduled.' 篇定时发布还没到点',
+                    'title' => admin_text(':n 篇定时发布还没到点', ['n' => $scheduled]),
                     'url' => route('admin.entries.index', ['status' => 'published']),
                 ];
             }
@@ -371,7 +410,7 @@ class DashboardService
             if ($today404 >= 3 && $today404 > $yday404) {
                 $alerts[] = [
                     'level' => 'warn',
-                    'title' => '今日 404 '.$today404.' 次，比昨天多',
+                    'title' => admin_text('今日 404 :n 次，比昨天多', ['n' => $today404]),
                     'url' => route('admin.stats.logs', ['status' => '404', 'from' => $today, 'to' => $today]),
                 ];
             }
@@ -390,14 +429,14 @@ class DashboardService
         $schedule = $this->scheduleHint($mode);
 
         return [
-            'theme' => app(ThemeCatalog::class)->label((string) Setting::getValue('theme', config('cms.theme'))),
+            'theme' => app(ThemeCatalog::class)->label(app(ThemeCatalog::class)->currentSlug()),
             'cache' => $cacheOn,
             'collect_mode' => $mode,
             'last_run' => $latest?->last_run_at?->toDateTimeString(),
             'last_ok' => $latest ? $latest->last_status !== 'fail' : true,
             'last_message' => $latest?->last_message,
             'schedule' => $schedule,
-            'attention' => ! $cacheOn || $failed || $schedule !== null || ($latest && $latest->last_status === 'fail'),
+            'attention' => $failed || $schedule !== null,
         ];
     }
 
@@ -405,13 +444,13 @@ class DashboardService
     {
         if ($mode === CmsRuntime::MODE_OFF) {
             return Collector::query()->where('is_active', true)->exists()
-                ? '采集已关闭，活动任务不会自动跑'
+                ? admin_text('采集已关闭，活动任务不会自动跑')
                 : null;
         }
         $overdue = Collector::query()->where('is_active', true)->get()
             ->filter(fn (Collector $c) => $c->due() && $c->last_run_at && $c->last_run_at->lt(now()->subHours(2)));
         if ($overdue->isNotEmpty()) {
-            return '有采集已过期超过 2 小时，调度可能没在跑';
+            return admin_text('有采集已过期超过 2 小时，调度可能没在跑');
         }
 
         return null;
@@ -450,7 +489,7 @@ class DashboardService
 
     protected function submissionTitle(FormSubmission $row): string
     {
-        $form = $row->form?->name ?: '留言';
+        $form = $row->form?->name ?: admin_text('留言');
         $preview = collect($row->data ?? [])
             ->map(fn ($v) => is_array($v) ? implode(', ', $v) : (string) $v)
             ->filter()
@@ -458,5 +497,4 @@ class DashboardService
 
         return $preview ? $form.' · '.Str::limit((string) $preview, 40) : $form;
     }
-
 }

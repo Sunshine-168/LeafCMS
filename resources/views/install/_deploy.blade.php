@@ -1,8 +1,14 @@
 @php
     $siteId = (int) ($siteId ?? 1);
+    $siteRoot = str_replace('\\', '/', rtrim(base_path(), '/\\'));
     $compact = (bool) ($compact ?? false);
     $urls = $urls ?? [];
     $hl = $hl ?? fn (string $key, string $label) => e($label);
+    $settingsLink = static function (string $tab, string $label) use ($urls): string {
+        return !empty($urls['settings'])
+            ? '<a href="'.e(route('admin.settings.edit', ['tab' => $tab])).'">'.e($label).'</a>'
+            : e($label);
+    };
 @endphp
 <div class="deploy-guide">
     @unless($compact)
@@ -22,7 +28,7 @@ post_max_size = 32M
 max_execution_time = 60
 date.timezone = Asia/Shanghai</code></pre>
     </div>
-    <p class="hint">改完后重启 php-fpm 或网站服务。目录 <code>storage</code> 和 <code>bootstrap/cache</code> 必须可写。宝塔若禁用了 <code>exec</code> / <code>symlink</code>，不必再跑 <code>php artisan storage:link</code>，上传文件由站点自己从 <code>/storage</code> 读出。要做成真正软链（图片不走 PHP），在宝塔终端执行 <code>ln -s 站点目录/storage/app/public 站点目录/public/storage</code>。</p>
+    <p class="hint">改完后重启 php-fpm 或网站服务。目录 <code>storage</code> 和 <code>bootstrap/cache</code> 必须可写。宝塔若禁用了 <code>exec</code> / <code>symlink</code>，不必再跑 <code>php artisan storage:link</code>，上传文件由站点自己从 <code>/storage</code> 读出。要做成真正软链（图片不走 PHP），在宝塔终端执行 <code>ln -s {{ $siteRoot }}/storage/app/public {{ $siteRoot }}/public/storage</code>。</p>
 
     <h3>MySQL</h3>
     <p class="muted">正式站点建议 MySQL 5.7 / 8.0 或 MariaDB 10.3+，字符集用 <code>utf8mb4</code>。先建空库，再把账号写进 <code>.env</code>。</p>
@@ -45,13 +51,13 @@ DB_PASSWORD=请换成强密码</code></pre>
     <p class="hint">试用可以继续用 SQLite（<code>DB_CONNECTION=sqlite</code>），不用另装数据库。改完 <code>.env</code> 后执行 <code>php artisan config:clear</code>。</p>
 
     <h3>nginx</h3>
-    <p class="muted">网站根目录必须是项目里的 <code>public</code>，不要指到项目根。下面把 <code>/var/www/leafcms</code> 换成你的路径，<code>php8.4-fpm.sock</code> 换成本机 PHP-FPM 套接字。</p>
+    <p class="muted">网站根目录必须是项目里的 <code>public</code>，不要指到项目根。下面的路径就是当前这个安装的目录。<code>php8.4-fpm.sock</code> 换成本机 PHP-FPM 套接字。</p>
     <div class="code">
         <button type="button" class="copy" data-copy>复制</button>
         <pre><code>server {
     listen 80;
     server_name www.example.com;
-    root /var/www/leafcms/public;
+    root {{ $siteRoot }}/public;
     index index.php;
     charset utf-8;
     client_max_body_size 32m;
@@ -72,21 +78,21 @@ DB_PASSWORD=请换成强密码</code></pre>
     }
 }</code></pre>
     </div>
-    <p class="hint">第一行 <code>try_files</code> 会优先读后台生成的磁盘静态页。没有文件时再交给 PHP。多站点把 <code>site_{{ $siteId }}</code> 改成对应站的编号。HTTPS 请在前面加证书或由面板处理。</p>
+    <p class="hint">第一行 <code>try_files</code> 会优先读后台生成的磁盘静态页。没有文件时再交给 PHP。静态页目录是 <code>site_{{ $siteId }}</code>。HTTPS 请在前面加证书或由面板处理。</p>
     <p class="muted">还要在 <code>.env</code> 写上 <code>APP_URL=https://www.example.com</code>，<code>APP_ENV=production</code>，<code>APP_DEBUG=false</code>。若站点在反向代理后面，再设 <code>TRUST_PROXIES=*</code>。</p>
 
     <h3>搜索引擎 robots.txt</h3>
     <p class="muted">前台地址是 <code>/robots.txt</code>。默认允许抓首页，禁止 <code>/admin</code>、<code>/install</code>、<code>/member</code>、<code>/preview</code>，并带上各语言的 sitemap。关站时整站是 <code>Disallow: /</code>。</p>
-    <p class="muted">还要挡住某几段路径时，到{!! $hl('settingsMore', '设置 → 更多') !!}写「robots.txt 补充规则」，例如：</p>
+    <p class="muted">还要挡住某几段路径时，到{!! $settingsLink('seo', '设置 → 搜索与统计') !!}写「robots.txt 补充规则」，例如：</p>
     <div class="code">
         <button type="button" class="copy" data-copy>复制</button>
         <pre><code>Disallow: /private
 Disallow: /drafts</code></pre>
     </div>
-    <p class="hint">不要写 HTML 标签。大约最多 40 行、每行 200 字。改完打开前台 <code>/robots.txt</code> 核对。这和页面里的 <code>&lt;meta name="robots"&gt;</code> 不是一回事。收录范围装好后在后台「运营 → 更多 → 地图」（站点地图）。</p>
+    <p class="hint">不要写 HTML 标签。大约最多 40 行、每行 200 字。改完打开前台 <code>/robots.txt</code> 核对。这和页面里的 <code>&lt;meta name="robots"&gt;</code> 不是一回事。收录范围装好后在后台「运营 → 运营工具 → 站点地图」。</p>
 
     <h3>图片放到对象存储</h3>
-    <p class="muted">默认传到本机 <code>storage/app/public</code>。有软链时 nginx 直接吐文件；没有软链时走站点 <code>/storage</code> 路由，不依赖宝塔放开 <code>exec</code>。只换访问域名时，在{!! $hl('settingsMore', '设置 → 更多') !!}填「图片走这个域名」，不必改盘。</p>
+    <p class="muted">默认传到本机 <code>storage/app/public</code>。有软链时 nginx 直接吐文件；没有软链时走站点 <code>/storage</code> 路由，不依赖宝塔放开 <code>exec</code>。只换访问域名时，在{!! $settingsLink('api', '设置 → 加速与接口') !!}填「图片走这个域名」，不必改盘。</p>
     <p class="muted">要用阿里云 OSS / 腾讯云 COS / AWS S3 存文件：先 <code>composer require league/flysystem-aws-s3-v3</code>，再在 <code>.env</code> 写：</p>
     <div class="code">
         <button type="button" class="copy" data-copy>复制</button>

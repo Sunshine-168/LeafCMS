@@ -97,17 +97,27 @@ class CmsDirectiveRegistrar
     {
         Blade::directive($name, function (?string $expression) use ($tagClass): string {
             $expression = $this->expressionOrEmptyArray($expression);
+            // A runtime frame also works when nested tags live in separately compiled includes.
+            $frame = '$__cmsTagStack[array_key_last($__cmsTagStack)]';
 
             return '<?php '.
-                '$__cmsTagOptions = '.$expression.'; '.
-                '$__cmsTagAs = $__cmsTagOptions[\'as\'] ?? \'item\'; '.
-                'foreach (app(\\'.$tagClass.'::class)->get($__cmsTagOptions) as $__cmsTagItem): '.
-                '$$__cmsTagAs = $__cmsTagItem; '.
+                '$__cmsTagStack ??= []; '.
+                '$__cmsTagStack[] = [\'options\' => '.$expression.']; '.
+                $frame.'[\'as\'] = '.$frame.'[\'options\'][\'as\'] ?? \'item\'; '.
+                $frame.'[\'defined\'] = array_key_exists('.$frame.'[\'as\'], get_defined_vars()); '.
+                $frame.'[\'previous\'] = '.$frame.'[\'defined\'] ? ${'.$frame.'[\'as\']} : null; '.
+                'foreach (app(\\'.$tagClass.'::class)->get('.$frame.'[\'options\']) as ${'.$frame.'[\'as\']}): '.
                 '?>';
         });
 
         Blade::directive('end'.$name, function (): string {
-            return '<?php endforeach; unset($__cmsTagItem, $__cmsTagAs, $__cmsTagOptions); ?>';
+            $frame = '$__cmsTagStack[array_key_last($__cmsTagStack)]';
+
+            return '<?php endforeach; '.
+                'if ('.$frame.'[\'defined\']) { ${'.$frame.'[\'as\']} = '.$frame.'[\'previous\']; } '.
+                'else { unset(${'.$frame.'[\'as\']}); } '.
+                'array_pop($__cmsTagStack); '.
+                'if ($__cmsTagStack === []) { unset($__cmsTagStack); } ?>';
         });
     }
 

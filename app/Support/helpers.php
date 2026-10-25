@@ -1,8 +1,12 @@
 <?php
 
+use App\Support\AdminUi;
 use App\Support\Cdn;
 use App\Support\Locale;
+use App\Support\ThemeUi;
+use App\Support\ThemeVars;
 use App\Support\UrlMode;
+use App\Support\WorkbenchI18n;
 use Illuminate\Support\Facades\Route;
 
 if (! function_exists('cms_front_url')) {
@@ -52,14 +56,14 @@ if (! function_exists('cms_route')) {
 if (! function_exists('cms_t')) {
     function cms_t(string $zh, string $en): string
     {
-        return \App\Support\Locale::isEnglish() ? $en : $zh;
+        return Locale::isEnglish() ? $en : $zh;
     }
 }
 
 if (! function_exists('cms_ui')) {
     function cms_ui(string $key, array $replace = []): string
     {
-        $text = \App\Support\ThemeUi::get($key);
+        $text = ThemeUi::get($key);
         foreach ($replace as $search => $value) {
             $text = str_replace(':'.$search, (string) $value, $text);
         }
@@ -71,7 +75,7 @@ if (! function_exists('cms_ui')) {
 if (! function_exists('cms_theme')) {
     function cms_theme(string $key, string $default = ''): string
     {
-        $value = \App\Support\ThemeVars::get($key);
+        $value = ThemeVars::get($key);
 
         return $value !== '' ? $value : $default;
     }
@@ -106,8 +110,8 @@ if (! function_exists('cms_locale_url')) {
     function cms_locale_url(string $targetLocale): string
     {
         $path = trim(request()->path(), '/');
-        foreach (\App\Support\Locale::codes() as $code) {
-            $public = \App\Support\Locale::toPublic($code);
+        foreach (Locale::codes() as $code) {
+            $public = Locale::toPublic($code);
             if ($path === $public) {
                 $path = '';
                 break;
@@ -117,7 +121,7 @@ if (! function_exists('cms_locale_url')) {
                 break;
             }
         }
-        $prefix = trim(\App\Support\UrlMode::localePrefix($targetLocale), '/');
+        $prefix = trim(UrlMode::localePrefix($targetLocale), '/');
         $joined = trim(($prefix === '' ? '' : $prefix).($path === '' ? '' : '/'.$path), '/');
         $url = $joined === '' ? '/' : '/'.$joined;
         $query = request()->query();
@@ -133,7 +137,21 @@ if (! function_exists('cms_locale_url')) {
 if (! function_exists('admin_t')) {
     function admin_t(string $key, array $replace = []): string
     {
-        return trans('admin.'.$key, $replace);
+        $key = 'admin.'.$key;
+        $locale = app()->getLocale();
+        $translator = app('translator');
+        if (! $translator->has($key, $locale, false) && AdminUi::normalize($locale) !== AdminUi::ZH) {
+            return $translator->get($key, $replace, 'en', false);
+        }
+
+        return $translator->get($key, $replace, $locale);
+    }
+}
+
+if (! function_exists('admin_text')) {
+    function admin_text(string $text, array $replace = []): string
+    {
+        return WorkbenchI18n::text($text, $replace);
     }
 }
 
@@ -154,12 +172,20 @@ if (! function_exists('admin_help_view')) {
             'theme' => 'admin.help._theme',
             'tags' => 'admin.help._tags',
             'schedule' => 'admin.help._schedule',
+            'baota' => 'admin.help._baota',
             'env' => 'install._deploy',
             'laravel' => 'install._laravel',
             'docker' => 'install._docker',
             default => 'admin.help._use',
         };
-        if (\App\Support\AdminUi::current() === \App\Support\AdminUi::EN) {
+        $ui = AdminUi::current();
+        if ($ui !== AdminUi::ZH) {
+            $localized = 'admin.help.'.$ui.'._'.$topic;
+            if (view()->exists($localized)) {
+                return $localized;
+            }
+        }
+        if (! AdminUi::isChinese($ui)) {
             $en = 'admin.help.en._'.$topic;
             if (view()->exists($en)) {
                 return $en;

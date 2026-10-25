@@ -17,7 +17,7 @@ class RoleAdminService
 
     public function permissionTree(): Collection
     {
-        return AdminPermission::query()->orderBy('sort')->get()->groupBy('group');
+        return AdminPermission::query()->where('key', '!=', 'sites')->orderBy('sort')->get()->groupBy('group');
     }
 
     /** @param  array<string, mixed>  $input */
@@ -59,23 +59,23 @@ class RoleAdminService
             $role->permissions()->detach();
         }
 
-        return Result::ok($role, $creating ? '已添加' : '已保存');
+        return Result::ok($role, $creating ? admin_text('已添加') : admin_text('已保存'));
     }
 
     public function delete(AdminRole $role): array
     {
         if ($role->is_super) {
-            return Result::fail('超级管理员角色不能删除');
+            return Result::fail(admin_text('超级管理员角色不能删除'));
         }
         $n = $role->users()->count();
         if ($n > 0) {
-            return Result::fail('还有 '.$n.' 人在用这个角色，请先到管理员里换掉');
+            return Result::fail(admin_text('还有 :count 人在用这个角色，请先到管理员里换掉', ['count' => $n]));
         }
-        $name = $role->name ?: $role->slug;
+        $name = $role->displayName() ?: $role->slug;
         $role->permissions()->detach();
         $role->delete();
 
-        return Result::ok(null, '已删除「'.$name.'」');
+        return Result::ok(null, admin_text('已删除「:name」', ['name' => $name]));
     }
 
     protected function uniqueSlug(string $base, ?int $ignoreId): string

@@ -40,13 +40,18 @@ class Menu extends Model
     {
         $location = (string) $location;
 
-        return self::locations()[$location] ?? ($location !== '' ? $location : '—');
+        $known = self::locations();
+        if (isset($known[$location])) {
+            return admin_text($known[$location]);
+        }
+
+        return $location !== '' ? $location : '—';
     }
 
     public function listingCount(): string
     {
         $n = (int) ($this->items_count ?? $this->items->count());
 
-        return $n > 0 ? $n.' 项' : '还没有条目';
+        return $n > 0 ? admin_text(':count 项', ['count' => $n]) : admin_text('还没有条目');
     }
 }

@@ -2,7 +2,7 @@
     $urls = $urls ?? [];
     $copy = admin_t('guide.copy');
 @endphp
-<p class="muted">The front only uses <code>@@cms*</code>. Loop tags need a matching end tag. The loop variable is <code>$item</code>; nested loops must set <code>'as' =&gt; 'alias'</code>. Skins: <a href="{{ $urls['helpThemes'] ?? '#' }}">Themes</a>. Files: <a href="{{ $urls['theme'] ?? '#' }}">Templates</a>.</p>
+<p class="muted">The front only has one tag set, the one I kept: <code>@@cms*</code>. Loop tags need a matching end tag. The loop variable is <code>$item</code>; nested loops must set <code>'as' =&gt; 'alias'</code> or the two loops share one name. Skins: <a href="{{ $urls['helpThemes'] ?? '#' }}">Themes</a>. Files: <a href="{{ $urls['theme'] ?? '#' }}">Templates</a>.</p>
 
 <h3>Typical examples</h3>
 <div class="code">

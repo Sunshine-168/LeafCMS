@@ -8,7 +8,7 @@
             <button type="button" class="copy" data-copy>复制</button>
             <pre><code>docker compose up --build</code></pre>
         </div>
-        <p class="hint">第一次会编译镜像，需要几分钟。看到 <code>Development Server</code> 就好了。</p>
+        <p class="hint">第一次会编译镜像，需要几分钟。看到 <code>Development Server</code> 就好了。容器里每分钟会自己执行计划任务，不用再配系统定时。</p>
 
         <h3>2. 打开网站</h3>
         <p class="muted">前台 <a href="http://127.0.0.1:8000/">http://127.0.0.1:8000/</a><br>后台 <a href="http://127.0.0.1:8000/admin/login">http://127.0.0.1:8000/admin/login</a></p>

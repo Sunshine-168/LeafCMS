@@ -94,4 +94,21 @@ class AdminUser extends Authenticatable
             ->values()
             ->all() ?? [];
     }
+
+    /** 安装时的演示账号按邮箱显示。改过的名字保持原文，编辑框仍用 name。 */
+    public function displayName(): string
+    {
+        $name = trim((string) $this->name);
+        $seed = match ($this->email) {
+            'admin@example.com' => ['超级管理员', 'staff.super'],
+            'editor@example.com' => ['编辑', 'staff.editor'],
+            'operator@example.com' => ['运营同事', 'staff.operator'],
+            default => null,
+        };
+        if ($seed !== null && $name === $seed[0]) {
+            return admin_t($seed[1]);
+        }
+
+        return $name;
+    }
 }

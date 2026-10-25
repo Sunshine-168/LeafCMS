@@ -31,10 +31,10 @@
         }
         $clock = $dt->format('H:i:s');
         if ($dt->isToday()) {
-            return '今天 '.$clock;
+            return admin_text('今天 ').$clock;
         }
         if ($dt->isYesterday()) {
-            return '昨天 '.$clock;
+            return admin_text('昨天 ').$clock;
         }
 
         return $dt->year === now()->year ? $dt->format('m-d ').$clock : $dt->format('Y-m-d ').$clock;
@@ -50,32 +50,32 @@
                 @if($ip !== '')
                     <input type="hidden" name="ip" value="{{ $ip }}">
                 @endif
-                <input type="search" name="q" value="{{ $q }}" placeholder="搜索管理员、IP 或改动内容" aria-label="搜索日志">
+                <input type="search" name="q" value="{{ $q }}" placeholder="{{ admin_text('搜索管理员、IP 或改动内容') }}" aria-label="{{ admin_text('搜索日志') }}">
                 <div class="field">
-                    <label for="log-from">从</label>
-                    <input id="log-from" type="date" name="from" value="{{ $from }}" aria-label="开始日期">
+                    <label for="log-from">{{ admin_text('从') }}</label>
+                    <input id="log-from" type="date" name="from" value="{{ $from }}" aria-label="{{ admin_text('开始日期') }}" lang="{{ \App\Support\AdminUi::htmlLang() }}">
                 </div>
                 <div class="field">
-                    <label for="log-to">到</label>
-                    <input id="log-to" type="date" name="to" value="{{ $to }}" aria-label="结束日期">
+                    <label for="log-to">{{ admin_text('到') }}</label>
+                    <input id="log-to" type="date" name="to" value="{{ $to }}" aria-label="{{ admin_text('结束日期') }}" lang="{{ \App\Support\AdminUi::htmlLang() }}">
                 </div>
-                <button class="btn btn-muted" type="submit">查询</button>
+                <button class="btn btn-muted" type="submit">{{ admin_text('查询') }}</button>
             </form>
             <div class="entry-status-row">
-                <a class="chip {{ ! $mine ? 'active' : '' }}" href="{{ $qs(['mine' => null]) }}">全部</a>
-                <a class="chip {{ $mine ? 'active' : '' }}" href="{{ $qs(['mine' => '1']) }}">我的</a>
-                <a class="chip {{ $from === $today && $to === $today ? 'active' : '' }}" href="{{ $qs(['from' => $today, 'to' => $today]) }}">今天</a>
-                <a class="chip {{ $from === $yesterday && $to === $yesterday ? 'active' : '' }}" href="{{ $qs(['from' => $yesterday, 'to' => $yesterday]) }}">昨天</a>
-                <a class="chip {{ $from === $weekFrom && $to === $today ? 'active' : '' }}" href="{{ $qs(['from' => $weekFrom, 'to' => $today]) }}">近7天</a>
-                <a class="chip {{ $from === $monthFrom && $to === $today ? 'active' : '' }}" href="{{ $qs(['from' => $monthFrom, 'to' => $today]) }}">近30天</a>
+                <a class="chip {{ ! $mine ? 'active' : '' }}" href="{{ $qs(['mine' => null]) }}">{{ admin_text('全部') }}</a>
+                <a class="chip {{ $mine ? 'active' : '' }}" href="{{ $qs(['mine' => '1']) }}">{{ admin_text('我的') }}</a>
+                <a class="chip {{ $from === $today && $to === $today ? 'active' : '' }}" href="{{ $qs(['from' => $today, 'to' => $today]) }}">{{ admin_text('今天') }}</a>
+                <a class="chip {{ $from === $yesterday && $to === $yesterday ? 'active' : '' }}" href="{{ $qs(['from' => $yesterday, 'to' => $yesterday]) }}">{{ admin_text('昨天') }}</a>
+                <a class="chip {{ $from === $weekFrom && $to === $today ? 'active' : '' }}" href="{{ $qs(['from' => $weekFrom, 'to' => $today]) }}">{{ admin_text('近7天') }}</a>
+                <a class="chip {{ $from === $monthFrom && $to === $today ? 'active' : '' }}" href="{{ $qs(['from' => $monthFrom, 'to' => $today]) }}">{{ admin_text('近30天') }}</a>
                 @if($ip !== '')
-                    <a class="chip active" href="{{ $qs(['ip' => null]) }}" title="取消按这个 IP 筛选">{{ $ip }}</a>
+                    <a class="chip active" href="{{ $qs(['ip' => null]) }}" title="{{ admin_text('取消按这个 IP 筛选') }}">{{ $ip }}</a>
                 @endif
                 @if($hasDate)
-                    <a class="chip" href="{{ $qs(['from' => null, 'to' => null]) }}">全部时间</a>
+                    <a class="chip" href="{{ $qs(['from' => null, 'to' => null]) }}">{{ admin_text('全部时间') }}</a>
                 @endif
                 @if($hasFilters)
-                    <a class="chip" href="{{ route('admin.logs.index') }}">清除筛选</a>
+                    <a class="chip" href="{{ route('admin.logs.index') }}">{{ admin_text('清除筛选') }}</a>
                 @endif
             </div>
         </div>
@@ -83,18 +83,18 @@
         @if($logs->isEmpty())
             <div class="list-empty">
                 @if($hasFilters)
-                    <p>没有符合条件的记录。</p>
-                    <a class="btn btn-muted" href="{{ route('admin.logs.index') }}">清除筛选</a>
+                    <p>{{ admin_text('没有符合条件的记录。') }}</p>
+                    <a class="btn btn-muted" href="{{ route('admin.logs.index') }}">{{ admin_text('清除筛选') }}</a>
                 @else
-                    <p>还没有操作记录。</p>
-                    <p class="muted">打开页面不会记。登录、退出、保存、删除会出现在这里，并写清改了哪一条、IP 是谁。</p>
+                    <p>{{ admin_text('还没有操作记录。') }}</p>
+                    <p class="muted">{{ admin_text('打开页面不会记。登录、退出、保存、删除会出现在这里，并写清改了哪一条、IP 是谁。') }}</p>
                 @endif
             </div>
         @else
             <table class="data">
                 <thead>
                 <tr>
-                    <th>操作</th>
+                    <th>{{ admin_text('操作') }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -113,17 +113,17 @@
                                     <span class="entry-row-title">{{ $title }}</span>
                                 @endif
                                 @if($log->failed())
-                                    <span class="badge badge-off">没成功</span>
+                                    <span class="badge badge-off">{{ admin_text('没成功') }}</span>
                                 @endif
                             </div>
                             <div class="entry-row-meta">
                                 @if($log->target_id && ! $subject)
-                                    编号 {{ $log->target_id }} ·
+                                    {{ admin_text('编号 :id', ['id' => $log->target_id]) }} ·
                                 @endif
                                 @if($log->detail && str_starts_with((string) $log->detail, '选了') && ! str_contains((string) $subject, '选了'))
                                     {{ $log->detail }} ·
                                 @endif
-                                {{ $log->admin_name ?: '未知管理员' }}
+                                {{ $log->actorName() }}
                                 · {{ $fmtTime($log->created_at) }}
                                 @if($log->ip)
                                     · <a class="log-ip" href="{{ $qs(['ip' => $log->ip]) }}">{{ $log->ip }}</a>
@@ -132,7 +132,7 @@
                                     @endif
                                 @endif
                                 @if($log->failed())
-                                    · 返回 {{ $log->status }}
+                                    · {{ admin_text('返回 :status', ['status' => $log->status]) }}
                                 @endif
                             </div>
                         </td>
@@ -140,7 +140,7 @@
                 @endforeach
                 </tbody>
             </table>
-            <p class="muted entry-index-count">共 {{ $logs->total() }} 条</p>
+            <p class="muted entry-index-count">{{ admin_text('共 :count 条记录', ['count' => $logs->total()]) }}</p>
             {{ $logs->links() }}
         @endif
     </div>

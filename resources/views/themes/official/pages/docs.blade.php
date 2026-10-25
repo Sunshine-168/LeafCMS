@@ -11,6 +11,7 @@
         'themes' => cms_t('主题', 'Themes'),
         'theme' => cms_t('模板', 'Templates'),
         'tags' => cms_t('标签', 'Tags'),
+        'baota' => cms_t('宝塔', 'Baota'),
         'env' => cms_t('环境', 'Environment'),
         'schedule' => cms_t('定时', 'Cron'),
         'laravel' => cms_t('命令行', 'CLI'),
@@ -18,7 +19,7 @@
     ];
     $groups = [
         cms_t('说明', 'Guide') => ['use', 'admin', 'themes', 'theme', 'tags'],
-        cms_t('安装', 'Install') => ['env', 'schedule', 'laravel', 'docker'],
+        cms_t('安装', 'Install') => ['baota', 'env', 'schedule', 'laravel', 'docker'],
     ];
     $topic = (string) request('topic', 'use');
     if (! array_key_exists($topic, $topics)) {
@@ -33,6 +34,7 @@
         'tags' => $doc('tags'),
         'env' => $doc('env'),
         'schedule' => $doc('schedule'),
+        'baota' => $doc('baota'),
         'front' => cms_route('home'),
     ];
     $hl = static fn (string $key, string $label): string => e($label);
@@ -43,13 +45,19 @@
         default => 'admin.help._'.$topic,
     };
     $enView = 'admin.help.en._'.$topic;
-    $helpView = \App\Support\Locale::isEnglish() && view()->exists($enView) ? $enView : $zhView;
+    $twView = 'admin.help.zh_tw._'.$topic;
+    $locale = \App\Support\Locale::current();
+    $helpView = match (true) {
+        $locale === 'zh_tw' && view()->exists($twView) => $twView,
+        \App\Support\Locale::isEnglish() && view()->exists($enView) => $enView,
+        default => $zhView,
+    };
 @endphp
     <div class="page-hero">
         <div class="wrap">
             <div class="kicker"><i></i> Docs</div>
             <h1>{{ cms_t('系统里的说明', 'The in-app guide') }}</h1>
-            <p class="lead">{{ cms_t('下面和后台「说明」是同一套：怎么用、后台每一栏、主题、模板标签，以及环境和安装。', 'This is the same guide as Admin → Help: usage, each admin screen, themes, tags, environment, and install.') }}</p>
+            <p class="lead">{{ cms_t('下面和后台「说明」是同一套：怎么用、后台每一栏、主题、模板标签，以及宝塔、环境和安装。', 'This is the same guide as Admin → Help: usage, each admin screen, themes, tags, Baota, environment, and install.') }}</p>
         </div>
     </div>
     <section>

@@ -8,13 +8,12 @@ use App\Services\Admin\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\View\View;
 
 class MediaController extends Controller
 {
-    public function __construct(private readonly MediaService $mediaService)
-    {
-    }
+    public function __construct(private readonly MediaService $mediaService) {}
 
     /** 媒体库列表 */
     public function index(Request $request): View
@@ -48,9 +47,9 @@ class MediaController extends Controller
         if ($request->hasFile('file')) {
             $files[] = $request->file('file');
         }
-        $files = array_values(array_filter($files, fn ($f) => $f instanceof \Illuminate\Http\UploadedFile));
+        $files = array_values(array_filter($files, fn ($f) => $f instanceof UploadedFile));
         if ($files === []) {
-            return back()->with('error', '请选择要上传的文件');
+            return back()->with('error', admin_text('请选择要上传的文件'));
         }
         $request->validate([
             'files' => 'nullable|array',
@@ -58,7 +57,7 @@ class MediaController extends Controller
             'file' => 'nullable|file|max:10240',
         ]);
         $ok = 0;
-        $msg = '上传失败';
+        $msg = admin_text('上传失败');
         foreach ($files as $file) {
             $result = $this->mediaService->upload($file, $request->input('alt'));
             if ($result['ok']) {
@@ -72,7 +71,7 @@ class MediaController extends Controller
         ], fn ($v) => $v !== null && $v !== '');
 
         return redirect()->route('admin.media.index', $back)
-            ->with($ok > 0 ? 'status' : 'error', $ok > 1 ? '已上传 '.$ok.' 个文件' : $msg);
+            ->with($ok > 0 ? 'status' : 'error', $ok > 1 ? admin_text('已上传 :count 个文件', ['count' => $ok]) : $msg);
     }
 
     /** 编辑器/封面选择器内上传图片 */
@@ -84,7 +83,7 @@ class MediaController extends Controller
         $result = $this->mediaService->upload($request->file('file'), $request->input('alt'));
         $media = $result['data'];
         if (! $media instanceof Media) {
-            return response()->json(['ok' => false, 'msg' => $result['msg'] ?: '上传失败'], 422);
+            return response()->json(['ok' => false, 'msg' => $result['msg'] ?: admin_text('上传失败')], 422);
         }
 
         return response()->json([

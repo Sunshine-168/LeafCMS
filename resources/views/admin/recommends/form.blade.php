@@ -41,7 +41,7 @@
             <select name="query[model_id]">
                 <option value="">全部模型</option>
                 @foreach($models ?? [] as $m)
-                    <option value="{{ $m->id }}" @selected((string) ($qp['model_id'] ?? '') === (string) $m->id)>{{ $m->name }}</option>
+                    <option value="{{ $m->id }}" @selected((string) ($qp['model_id'] ?? '') === (string) $m->id)>{{ $m->displayName() }}</option>
                 @endforeach
             </select>
             <label>栏目（可多选）</label>
@@ -123,7 +123,7 @@
                         <label>链接</label>
                         <input type="text" name="items[{{ $i }}][url]" value="{{ $row['url'] ?? '' }}">
                         <label>HTML</label>
-                        <textarea name="items[{{ $i }}][html]">{{ $row['html'] ?? '' }}</textarea>
+                        <textarea name="items[{{ $i }}][html]" rows="4">{{ $row['html'] ?? '' }}</textarea>
                         <label>关联文档 ID</label>
                         <input type="number" name="items[{{ $i }}][entry_id]" value="{{ $row['entry_id'] ?? '' }}">
                     </div>
@@ -143,7 +143,10 @@
 <script>
 (function () {
     var idx = {{ count($rows ?? []) }};
-    var localeCols = @json(collect($localeCols ?? \App\Support\Locale::configured())->map(fn ($meta, $code) => ['code' => $code, 'label' => $meta['label'] ?? $code])->values());
+    @php
+        $recommendLocaleCols = collect($localeCols ?? \App\Support\Locale::configured())->map(fn ($meta, $code) => ['code' => $code, 'label' => $meta['label'] ?? $code])->values();
+    @endphp
+    var localeCols = @json($recommendLocaleCols);
     var defaultCode = @json($defaultCode ?? \App\Support\Locale::default());
     function bindPreview(root) {
         var sel = root.getAttribute('data-media-preview');
@@ -188,7 +191,7 @@
         html += '<div class="cover-row"><input type="text" id="' + id + '" name="items[' + idx + '][image]" placeholder="可空，图片地址">';
         html += '<button type="button" class="btn btn-muted" data-media-pick="#' + id + '">选择</button></div></div>';
         html += '<label>链接</label><input name="items[' + idx + '][url]">';
-        html += '<label>HTML</label><textarea name="items[' + idx + '][html]"></textarea>';
+        html += '<label>HTML</label><textarea name="items[' + idx + '][html]" rows="4"></textarea>';
         html += '<label>关联文档 ID</label><input type="number" name="items[' + idx + '][entry_id]">';
         d.innerHTML = html;
         document.getElementById('items').appendChild(d);

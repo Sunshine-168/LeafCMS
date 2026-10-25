@@ -26,4 +26,7 @@ fi
 php artisan storage:link --force >/dev/null 2>&1 || true
 php artisan view:clear >/dev/null 2>&1 || true
 
+# 容器里没有 crontab。每分钟跑一次计划任务，定时采集不用再配。
+(while true; do php artisan schedule:run --no-ansi >/dev/null 2>&1 || true; sleep 60; done) &
+
 exec "$@"

@@ -16,7 +16,7 @@ class InstallController extends Controller
     public function index(Request $request): View|RedirectResponse
     {
         $way = (string) $request->query('way', 'web');
-        if (! in_array($way, ['web', 'laravel', 'docker', 'deploy'], true)) {
+        if (! in_array($way, ['web', 'baota', 'laravel', 'docker', 'deploy'], true)) {
             $way = 'web';
         }
         if ($this->install->locked() && $way === 'web') {
@@ -136,7 +136,7 @@ class InstallController extends Controller
     protected function pageData(Request $request): array
     {
         $way = (string) $request->query('way', 'web');
-        if (! in_array($way, ['web', 'laravel', 'docker', 'deploy'], true)) {
+        if (! in_array($way, ['web', 'baota', 'laravel', 'docker', 'deploy'], true)) {
             $way = 'web';
         }
         $checks = $this->install->checks();

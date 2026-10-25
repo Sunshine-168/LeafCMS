@@ -67,10 +67,10 @@ class ThemeTemplateService
     {
         $path = $this->safePath($slug, $rel);
         if ($path === null) {
-            return Result::fail('非法路径');
+            return Result::fail(admin_text('非法路径'));
         }
         if (! is_file($path)) {
-            return Result::fail('文件不存在');
+            return Result::fail(admin_text('文件不存在'));
         }
 
         return Result::ok([
@@ -90,7 +90,7 @@ class ThemeTemplateService
         }
         $path = $this->safePath($slug, $rel);
         if ($path === null || ! is_file($path)) {
-            return Result::fail('文件不存在');
+            return Result::fail(admin_text('文件不存在'));
         }
         $this->backup($slug, $rel);
         File::put($path, $content);
@@ -107,7 +107,7 @@ class ThemeTemplateService
         }
         $path = $this->safePath($slug, $rel);
         if ($path === null || ! is_file($path)) {
-            return Result::fail('文件不存在');
+            return Result::fail(admin_text('文件不存在'));
         }
         $stamp = date('YmdHis');
         $dest = $this->backupDir($slug).DIRECTORY_SEPARATOR.$stamp.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $rel);
@@ -125,11 +125,11 @@ class ThemeTemplateService
         }
         $path = $this->safePath($slug, $rel);
         if ($path === null) {
-            return Result::fail('非法路径');
+            return Result::fail(admin_text('非法路径'));
         }
         $root = $this->backupDir($slug);
         if (! is_dir($root)) {
-            return Result::fail('没有备份');
+            return Result::fail(admin_text('没有备份'));
         }
         $dirs = File::directories($root);
         rsort($dirs);
@@ -142,7 +142,7 @@ class ThemeTemplateService
             }
         }
         if ($latest === null) {
-            return Result::fail('没有该文件的备份');
+            return Result::fail(admin_text('没有该文件的备份'));
         }
         File::copy($latest, $path);
         $this->clearCaches($slug);
@@ -159,10 +159,10 @@ class ThemeTemplateService
     protected function guardWrite(string $slug, string $rel): ?array
     {
         if (! str_ends_with(strtolower(str_replace('\\', '/', $rel)), '.blade.php')) {
-            return Result::fail('只能编辑 blade 模板');
+            return Result::fail(admin_text('只能编辑 blade 模板'));
         }
         if (! $this->writable($slug)) {
-            return Result::fail('自带主题请先复制一套再改');
+            return Result::fail(admin_text('自带主题请先复制一套再改'));
         }
 
         return null;
@@ -196,26 +196,26 @@ class ThemeTemplateService
             'member/entry-form.blade.php' => ['写稿', 'member', '会员'],
         ];
         if (isset($map[$rel])) {
-            return ['label' => $map[$rel][0], 'group' => $map[$rel][1], 'group_label' => $map[$rel][2]];
+            return ['label' => admin_text($map[$rel][0]), 'group' => $map[$rel][1], 'group_label' => admin_text($map[$rel][2])];
         }
         $base = basename($rel, '.blade.php');
         if (str_starts_with($rel, 'member/')) {
-            return ['label' => $base, 'group' => 'member', 'group_label' => '会员'];
+            return ['label' => $base, 'group' => 'member', 'group_label' => admin_text('会员')];
         }
         if (str_starts_with($rel, 'partials/')) {
-            return ['label' => $base, 'group' => 'partials', 'group_label' => '公共块'];
+            return ['label' => $base, 'group' => 'partials', 'group_label' => admin_text('公共块')];
         }
         if (str_starts_with($rel, 'index/')) {
-            return ['label' => $base, 'group' => 'layout', 'group_label' => '首页与布局'];
+            return ['label' => $base, 'group' => 'layout', 'group_label' => admin_text('首页与布局')];
         }
         if (str_starts_with($rel, 'list/') || str_starts_with($rel, 'category/')) {
-            return ['label' => $base, 'group' => 'list', 'group_label' => '列表'];
+            return ['label' => $base, 'group' => 'list', 'group_label' => admin_text('列表')];
         }
         if (str_starts_with($rel, 'show/')) {
-            return ['label' => $base, 'group' => 'show', 'group_label' => '详情'];
+            return ['label' => $base, 'group' => 'show', 'group_label' => admin_text('详情')];
         }
 
-        return ['label' => $base, 'group' => 'other', 'group_label' => '其他'];
+        return ['label' => $base, 'group' => 'other', 'group_label' => admin_text('其他')];
     }
 
     protected function safePath(string $slug, string $rel): ?string

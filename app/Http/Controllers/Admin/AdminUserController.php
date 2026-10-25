@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\AdminUser;
 use App\Models\Cms\Category;
-use App\Models\Cms\Site;
 use App\Services\Admin\AdminUserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,9 +13,7 @@ use Illuminate\View\View;
 
 class AdminUserController extends Controller
 {
-    public function __construct(private readonly AdminUserService $users)
-    {
-    }
+    public function __construct(private readonly AdminUserService $users) {}
 
     public function index(Request $request): View
     {
@@ -42,7 +39,6 @@ class AdminUserController extends Controller
             'user' => new AdminUser(['is_active' => true]),
             'roles' => $this->users->roles(),
             'categories' => Category::query()->orderBy('sort_order')->get(),
-            'sites' => Site::query()->orderByDesc('is_default')->orderBy('id')->get(),
             'currentId' => auth('admin')->id(),
             'superCount' => $this->users->superAdminCount(),
         ]);
@@ -71,7 +67,6 @@ class AdminUserController extends Controller
             'user' => $admin_user,
             'roles' => $this->users->roles(),
             'categories' => Category::query()->orderBy('sort_order')->get(),
-            'sites' => Site::query()->orderByDesc('is_default')->orderBy('id')->get(),
             'currentId' => auth('admin')->id(),
             'superCount' => $this->users->superAdminCount(),
         ]);
@@ -118,8 +113,6 @@ class AdminUserController extends Controller
             'email' => ['required', 'email', $email],
             'password' => ($user?->exists ? 'nullable' : 'required').'|string|min:8',
             'role_id' => 'required|exists:admin_roles,id',
-            'site_ids' => 'nullable|array',
-            'site_ids.*' => 'integer|exists:cms_sites,id',
         ];
     }
 
@@ -127,14 +120,14 @@ class AdminUserController extends Controller
     private function messages(): array
     {
         return [
-            'name.required' => '请填写名称',
-            'email.required' => '请填写登录邮箱',
-            'email.email' => '请填写正确的邮箱',
-            'email.unique' => '这个邮箱已经有了',
-            'password.required' => '请设置登录密码',
-            'password.min' => '密码至少 8 位',
-            'role_id.required' => '请选择角色',
-            'role_id.exists' => '请选择角色',
+            'name.required' => admin_text('请填写名称'),
+            'email.required' => admin_text('请填写登录邮箱'),
+            'email.email' => admin_text('请填写正确的邮箱'),
+            'email.unique' => admin_text('这个邮箱已经有了'),
+            'password.required' => admin_text('请设置登录密码'),
+            'password.min' => admin_text('密码至少 8 位'),
+            'role_id.required' => admin_text('请选择角色'),
+            'role_id.exists' => admin_text('请选择角色'),
         ];
     }
 }

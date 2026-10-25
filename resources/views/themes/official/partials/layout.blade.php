@@ -10,25 +10,26 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', cms_t('LeafCMS 官网', 'LeafCMS'))</title>
-    <meta name="description" content="@yield('description', cms_t('LeafCMS 是可商用的开源建站系统，用来做企业官网、博客和多站点。', 'LeafCMS is an open-source, commercial-use site builder for company sites, blogs, and multiple sites.'))">
+    <meta name="description" content="@yield('description', cms_t('LeafCMS 是可商用的开源建站系统，用来做企业官网和博客。', 'LeafCMS is an open-source, commercial-use site builder for company sites and blogs.'))">
     <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="32x32">
     <link rel="icon" href="{{ asset('assets/brand/logo.svg') }}" type="image/svg+xml">
-    <link rel="stylesheet" href="{{ asset('assets/brand/site.css') }}?v=23">
+    <link rel="stylesheet" href="{{ asset('assets/brand/site.css') }}?v={{ filemtime(public_path('assets/brand/site.css')) }}">
+    <link rel="stylesheet" href="{{ asset('assets/brand/product.css') }}?v={{ filemtime(public_path('assets/brand/product.css')) }}">
+    @stack('styles')
 </head>
 <body>
+<a class="skip-link" href="#main-content">{{ cms_t('跳到正文', 'Skip to content') }}</a>
 <header class="top">
     <div class="wrap top-inner">
         <a class="brand" href="{{ cms_route('home') }}">
             <img class="mark" src="{{ asset('assets/brand/logo.svg') }}" alt="" width="32" height="32">
             LeafCMS
         </a>
-        <nav class="nav">
-            <a class="{{ $navOn('home') }}" href="{{ cms_route('home') }}">{{ cms_t('首页', 'Home') }}</a>
-            <a href="{{ cms_route('home') }}#features">{{ cms_t('特性', 'Features') }}</a>
-            <a href="{{ cms_route('home') }}#cases">{{ cms_t('案例', 'Cases') }}</a>
+        <nav class="nav" id="site-navigation" aria-label="{{ cms_t('主导航', 'Main navigation') }}">
+            <a href="{{ cms_route('home') }}#features">{{ cms_t('产品', 'Product') }}</a>
             <a class="{{ $navOn('site.themes') }}" href="{{ cms_route('site.themes') }}">{{ cms_t('主题', 'Themes') }}</a>
             <a class="{{ $navOn('site.guide') }}" href="{{ cms_route('site.guide') }}">{{ cms_t('安装', 'Install') }}</a>
-            <a class="{{ $navOn('site.docs') }}" href="{{ cms_route('site.docs') }}">{{ cms_t('说明', 'Docs') }}</a>
+            <a class="{{ $navOn('site.docs') }}" href="{{ cms_route('site.docs') }}">{{ cms_t('文档', 'Docs') }}</a>
             <a class="{{ $navOn('site.open') }}" href="{{ cms_route('site.open') }}">{{ cms_t('开源', 'Open source') }}</a>
             <a class="{{ $navOn('site.news') }}" href="{{ cms_route('site.news') }}">{{ cms_t('动态', 'News') }}</a>
             <a class="nav-github" href="https://github.com/Sunshine-168/LeafCMS" target="_blank" rel="noopener">GitHub</a>
@@ -45,23 +46,34 @@
         </div>
         <a class="btn btn-line hide-sm" href="https://github.com/Sunshine-168/LeafCMS" target="_blank" rel="noopener">GitHub</a>
         <a class="btn btn-solid hide-sm" href="{{ cms_route('site.guide') }}">{{ cms_t('开始安装', 'Install') }}</a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-label="{{ cms_t('打开菜单', 'Open menu') }}">{{ cms_t('菜单', 'Menu') }}</button>
+        <button class="nav-toggle" type="button" aria-controls="site-navigation" aria-expanded="false" aria-label="{{ cms_t('打开菜单', 'Open menu') }}" data-open-label="{{ cms_t('打开菜单', 'Open menu') }}" data-close-label="{{ cms_t('关闭菜单', 'Close menu') }}">{{ cms_t('菜单', 'Menu') }}</button>
     </div>
 </header>
-<main>
+<main id="main-content" tabindex="-1">
     @yield('content')
 </main>
+<dialog class="image-viewer" id="image-viewer" aria-labelledby="image-viewer-title">
+    <div class="image-viewer-header">
+        <h2 id="image-viewer-title">{{ cms_t('图片预览', 'Image preview') }}</h2>
+        <form method="dialog"><button class="image-viewer-close" type="submit" aria-label="{{ cms_t('关闭预览', 'Close preview') }}">×</button></form>
+    </div>
+    <div class="image-viewer-content" tabindex="0" role="region" aria-label="{{ cms_t('预览图片，可滚动查看', 'Preview image, scroll to explore') }}"><img id="image-viewer-image" alt=""></div>
+    <div class="image-viewer-footer">
+        <button type="button" class="btn btn-line" id="image-viewer-zoom" data-expand-label="{{ cms_t('放大至原始尺寸', 'Show original size') }}" data-fit-label="{{ cms_t('适应屏幕', 'Fit to screen') }}" aria-pressed="false">{{ cms_t('放大至原始尺寸', 'Show original size') }}</button>
+        <a class="text-link" id="image-viewer-original" target="_blank" rel="noopener">{{ cms_t('新窗口查看原图', 'Open original in a new tab') }} ↗</a>
+    </div>
+</dialog>
 <footer class="foot">
     <div class="wrap">
         <div class="foot-grid">
             <div class="foot-brand">
                 <a class="brand" href="{{ cms_route('home') }}"><img class="mark" src="{{ asset('assets/brand/logo.svg') }}" alt="" width="32" height="32"> LeafCMS</a>
-                <p>{{ cms_t('开源建站系统。企业官网、博客、下载站和多站点用同一套后台，前台用标签取内容。', 'Open-source site builder. Company sites, blogs, downloads, and multiple sites share one admin. Themes pull content with tags.') }}</p>
+                <p>{{ cms_t('开源建站系统。企业官网、博客和下载站用同一套后台，前台用标签取内容。', 'Open-source site builder. Company sites, blogs, and downloads share one admin. Themes pull content with tags.') }}</p>
             </div>
             <div>
                 <h3>{{ cms_t('产品', 'Product') }}</h3>
                 <a href="{{ cms_route('home') }}#features">{{ cms_t('产品特性', 'Features') }}</a>
-                <a href="{{ cms_route('home') }}#cases">{{ cms_t('上线案例', 'Live sites') }}</a>
+                <a href="{{ cms_route('home') }}#cases">{{ cms_t('相关项目', 'Other projects') }}</a>
                 <a href="{{ cms_route('site.themes') }}">{{ cms_t('全部主题', 'Themes') }}</a>
             </div>
             <div>
@@ -94,6 +106,7 @@
         <span>@sanpang</span>
     </a>
 </div>
-<script src="{{ asset('assets/brand/site.js') }}"></script>
+<script src="{{ asset('assets/brand/site.js') }}?v={{ filemtime(public_path('assets/brand/site.js')) }}" defer></script>
+@stack('scripts')
 </body>
 </html>

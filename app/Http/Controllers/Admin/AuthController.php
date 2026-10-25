@@ -11,9 +11,7 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly AuthService $authService)
-    {
-    }
+    public function __construct(private readonly AuthService $authService) {}
 
     /** 登录页 */
     public function showLogin(): View|RedirectResponse
@@ -92,7 +90,7 @@ class AuthController extends Controller
         $token = (string) $request->query('token', '');
         $email = (string) $request->query('email', '');
         if ($token === '' || $email === '') {
-            return redirect()->route('admin.password.forgot')->withErrors(['email' => '重置链接无效']);
+            return redirect()->route('admin.password.forgot')->withErrors(['email' => admin_text('重置链接无效')]);
         }
 
         return view('admin.auth.reset', compact('token', 'email'));
@@ -105,8 +103,8 @@ class AuthController extends Controller
             'token' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ], [
-            'password.min' => '新密码至少 8 位',
-            'password.confirmed' => '两次新密码不一致',
+            'password.min' => admin_text('新密码至少 8 位'),
+            'password.confirmed' => admin_text('两次新密码不一致'),
         ]);
         $result = $this->authService->resetPassword($data['email'], $data['token'], $data['password']);
         if (! $result['ok']) {

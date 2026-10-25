@@ -12,7 +12,7 @@ class HelpController extends Controller
     public function index(Request $request): View
     {
         $topic = (string) $request->query('topic', 'use');
-        if (! in_array($topic, ['use', 'admin', 'themes', 'theme', 'tags', 'env', 'schedule', 'laravel', 'docker'], true)) {
+        if (! in_array($topic, ['use', 'admin', 'themes', 'theme', 'tags', 'env', 'baota', 'schedule', 'laravel', 'docker'], true)) {
             $topic = 'use';
         }
 
@@ -56,7 +56,6 @@ class HelpController extends Controller
             'redirects' => $to('redirects', 'admin.redirects.index'),
             'collectors' => $to('collectors', 'admin.collectors.index'),
             'cache' => $to('html_cache', 'admin.html-cache.edit'),
-            'sites' => $to('sites', 'admin.sites.index'),
             'members' => $to('members', 'admin.members.index'),
             'groups' => $to('member_groups', 'admin.member-groups.index'),
             'locales' => $to('locales', 'admin.locales.index'),
@@ -71,6 +70,7 @@ class HelpController extends Controller
             'tags' => route('admin.help', ['topic' => 'tags']),
             'env' => route('admin.help', ['topic' => 'env']),
             'schedule' => route('admin.help', ['topic' => 'schedule']),
+            'baota' => route('admin.help', ['topic' => 'baota']),
         ];
     }
 }

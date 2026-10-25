@@ -26,22 +26,22 @@ class IpLocation
             return '';
         }
         if (self::isLoopback($ip)) {
-            return '本机';
+            return admin_text('本机');
         }
         if (self::inCidr4($ip, '169.254.0.0/16') || self::isIpv6LinkLocal($ip)) {
-            return '链路本地';
+            return admin_text('链路本地');
         }
         if (self::inCidr4($ip, '172.17.0.0/16')) {
-            return '内网（Docker）';
+            return admin_text('内网（Docker）');
         }
         if (self::isPrivate($ip)) {
-            return '内网';
+            return admin_text('内网');
         }
         if (self::isDocumentation($ip)) {
-            return '保留地址';
+            return admin_text('保留地址');
         }
         if (self::isReserved($ip)) {
-            return '保留地址';
+            return admin_text('保留地址');
         }
 
         return self::lookupPublic($ip);

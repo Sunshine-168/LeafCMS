@@ -5,10 +5,11 @@ namespace App\Services\Admin;
 use App\Models\Admin\AdminRole;
 use App\Models\Admin\AdminUser;
 use App\Models\Cms\Site;
-use App\Support\CurrentSite;
+use App\Support\AdminUi;
 use App\Support\Result;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AdminUserService
 {
@@ -44,7 +45,8 @@ class AdminUserService
 
     public function superAdminCount(): int
     {
-        return AdminUser::query()->whereHas('adminRole', fn ($q) => $q->where('is_super', true))->count();
+        return AdminUser::query()->where('is_active', true)
+            ->whereHas('adminRole', fn ($q) => $q->where('is_super', true))->count();
     }
 
     /** @param  array<string, mixed>  $input */
@@ -53,10 +55,11 @@ class AdminUserService
         $user ??= new AdminUser;
         $creating = ! $user->exists;
         $wasSuper = $user->exists && $user->isSuperAdmin();
+        $wasActive = (bool) $user->is_active;
 
         $name = trim((string) ($input['name'] ?? $user->name ?? ''));
         if ($name === '') {
-            return Result::fail('请填写名称');
+            return Result::fail(admin_text('请填写名称'));
         }
         $email = trim((string) ($input['email'] ?? $user->email ?? ''));
         if ($email === '') {
@@ -88,25 +91,25 @@ class AdminUserService
         if (! $role) {
             return Result::fail('请选择角色');
         }
-        if ($wasSuper && ! $role->is_super && $this->superAdminCount() <= 1) {
-            return Result::fail('至少保留一位超级管理员');
+        if ($wasSuper && $wasActive && (! $role->is_super || ! $user->is_active) && $this->superAdminCount() <= 1) {
+            return Result::fail('至少保留一位能登录的超级管理员');
+        }
+        if ($wasActive && ! $user->is_active) {
+            $user->setRememberToken(Str::random(60));
         }
 
         $user->save();
 
         if ($role->is_super) {
             $user->sites()->detach();
-        } elseif (array_key_exists('site_ids', $input) || array_key_exists('_has_site_scope', $input)) {
-            $siteIds = array_values(array_unique(array_filter(array_map('intval', (array) ($input['site_ids'] ?? [])))));
-            $user->sites()->sync($siteIds);
-        } elseif ($creating) {
-            $siteId = CurrentSite::idOrDefault() ?? Site::default()?->id;
+        } else {
+            $siteId = Site::default()?->id;
             if ($siteId) {
                 $user->sites()->sync([(int) $siteId]);
             }
         }
 
-        return Result::ok($user, $creating ? '已添加' : '已保存');
+        return Result::ok($user, $creating ? admin_text('已添加') : admin_text('已保存'));
     }
 
     public function toggle(AdminUser $user, ?int $actorId = null): array
@@ -118,6 +121,9 @@ class AdminUserService
             return Result::fail('至少保留一位能登录的超级管理员');
         }
         $user->is_active = ! $user->is_active;
+        if (! $user->is_active) {
+            $user->setRememberToken(Str::random(60));
+        }
         $user->save();
 
         return Result::ok(
@@ -131,47 +137,47 @@ class AdminUserService
         if ($actorId && (int) $user->id === $actorId) {
             return Result::fail('不能删除当前登录账号');
         }
-        if ($user->isSuperAdmin() && $this->superAdminCount() <= 1) {
+        if ($user->is_active && $user->isSuperAdmin() && $this->superAdminCount() <= 1) {
             return Result::fail('至少保留一位超级管理员');
         }
         $name = $user->name ?: $user->email;
         $user->delete();
 
-        return Result::ok(null, '已删除「'.$name.'」');
+        return Result::ok(null, admin_text('已删除「:name」', ['name' => $name]));
     }
 
     public function updateSelfName(AdminUser $user, string $name): array
     {
         $name = trim($name);
         if ($name === '') {
-            return Result::fail('请填写名称');
+            return Result::fail(admin_text('请填写名称'));
         }
         $user->name = $name;
         $user->save();
 
-        return Result::ok($user, '名称已保存');
+        return Result::ok($user, admin_text('名称已保存'));
     }
 
     public function updateSelfUiLocale(AdminUser $user, string $code): array
     {
-        $remembered = \App\Support\AdminUi::remember($code, true);
-        \App\Support\AdminUi::apply();
+        $remembered = AdminUi::remember($code, true);
+        AdminUi::apply();
 
-        return Result::ok($remembered, $code === \App\Support\AdminUi::EN ? 'Admin UI set to English' : '后台界面已设为中文');
+        return Result::ok($remembered, trans('admin.locale.msg_admin', ['lang' => AdminUi::label($code)]));
     }
 
     public function changeOwnPassword(AdminUser $user, string $current, string $new): array
     {
         if (! Hash::check($current, $user->getAuthPassword())) {
-            return Result::fail('当前密码不正确');
+            return Result::fail(admin_text('当前密码不正确'));
         }
         if (Hash::check($new, $user->getAuthPassword())) {
-            return Result::fail('新密码不能和当前密码一样');
+            return Result::fail(admin_text('新密码不能和当前密码一样'));
         }
 
         $user->password = $new;
         $user->save();
 
-        return Result::ok($user, '密码已更新');
+        return Result::ok($user, admin_text('密码已更新'));
     }
 }

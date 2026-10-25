@@ -13,8 +13,10 @@ use App\Models\Cms\Tag;
 use App\Services\Admin\CategoryService;
 use App\Services\Admin\EntryService;
 use App\Support\Locale;
+use App\Support\TranslationWatch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class EntryController extends Controller
@@ -33,12 +35,16 @@ class EntryController extends Controller
         $categoryId = $request->integer('category_id') ?: null;
         $tagId = $request->integer('tag_id') ?: null;
         $flag = trim((string) $request->query('flag', ''));
+        $translation = trim((string) $request->query('translation', ''));
+        if ($translation !== '') {
+            TranslationWatch::backfillMissing();
+        }
         $models = ContentModel::query()->where('is_active', true)->orderBy('sort_order')->get();
         $filterTag = $tagId ? Tag::query()->find($tagId) : null;
         $filterFlag = $flag !== '' ? CmsFlag::query()->where('name', $flag)->first() : null;
 
         return view('admin.entries.index', [
-            'entries' => $this->entryService->paginate($modelId, $status, 15, $keyword, $categoryId, $tagId, $flag ?: null),
+            'entries' => $this->entryService->paginate($modelId, $status, 15, $keyword, $categoryId, $tagId, $flag ?: null, $translation !== '' ? $translation : null),
             'models' => $models,
             'modelId' => $modelId,
             'currentModel' => $models->firstWhere('id', $modelId),
@@ -47,12 +53,13 @@ class EntryController extends Controller
             'categoryId' => $categoryId,
             'tagId' => $tagId,
             'flag' => $flag,
+            'translation' => $translation,
             'filterTag' => $filterTag,
             'filterFlag' => $filterFlag,
             'pendingCount' => $this->entryService->pendingCount($modelId),
             'categories' => $this->scopedCategories($modelId),
             'recommends' => Recommend::query()->where('is_active', true)->orderBy('id')->get(),
-            'flagOptions' => CmsFlag::options(),
+            'flagOptions' => CmsFlag::displayOptions(),
             'canPublish' => $this->entryService->canPublish(),
         ]);
     }
@@ -89,20 +96,19 @@ class EntryController extends Controller
     /** 保存新建 */
     public function store(Request $request): RedirectResponse
     {
-        $result = $this->entryService->save(null, $request->all());
+        $result = $this->entryService->save(null, $this->saveInput($request));
         if ($result['ok'] && $result['data'] instanceof Entry) {
-            return redirect()->route('admin.entries.edit', $result['data'])
-                ->with('status', $result['msg']);
+            return $this->savedResponse($request, $result['data'], true, $result['msg']);
         }
 
-        return redirect()->route('admin.entries.index', ['model_id' => $request->input('model_id')])
-            ->with('error', $result['msg']);
+        return back()->withInput()->with('error', $result['msg']);
     }
 
     /** 编辑内容 */
     public function edit(Entry $entry): View
     {
         $entry->load(['tags', 'categories', 'revisions.admin']);
+        $entry->overlayWorkingDraft();
         $model = $entry->modelDef()->with(['fields.categories'])->firstOrFail();
 
         return view('admin.entries.form', [
@@ -123,10 +129,76 @@ class EntryController extends Controller
     /** 更新内容 */
     public function update(Request $request, Entry $entry): RedirectResponse
     {
-        $result = $this->entryService->save($entry, $request->all());
+        $result = $this->entryService->save($entry, $this->saveInput($request));
+
+        if ($result['ok']) {
+            return $this->savedResponse($request, $result['data'], false, $result['msg']);
+        }
 
         return redirect()->route('admin.entries.edit', $entry)
-            ->with($result['ok'] ? 'status' : 'error', $result['msg']);
+            ->withInput()->with('error', $result['msg']);
+    }
+
+    private function saveInput(Request $request): array
+    {
+        $request->validate([
+            'submit_action' => 'nullable|in:save,draft,preview,publish',
+            'status' => 'nullable|in:draft,pending,published,scheduled',
+            'published_at' => 'nullable|date',
+            'edit_version' => 'nullable|string|size:64',
+            'draft_id' => 'nullable|regex:/^[a-zA-Z0-9_-]{1,80}$/',
+            'recovered_draft_id' => 'nullable|regex:/^[a-zA-Z0-9_-]{1,80}$/',
+            'preview_locale' => ['nullable', Rule::in(Locale::codes())],
+        ]);
+        $input = $request->all();
+        if ($request->input('submit_action') === 'draft') {
+            $input['status'] = 'draft';
+            $input['published_at'] = null;
+        } elseif ($request->input('status') === 'scheduled') {
+            $request->validate(['published_at' => 'required|date|after:now']);
+            $input['status'] = 'published';
+        } elseif (in_array($request->input('submit_action'), ['save', 'preview', 'publish'], true) && $request->input('status') === 'published') {
+            // “立即发布”不沿用旧的定时日期。
+            $input['published_at'] = now();
+        }
+
+        return $input;
+    }
+
+    private function savedResponse(Request $request, Entry $entry, bool $created = false, ?string $message = null): RedirectResponse
+    {
+        $message = ($message && $message !== '保存成功') ? $message : match ($entry->status) {
+            'draft' => admin_text('草稿已保存，前台不可见'),
+            'pending' => admin_text('已提交审核，审核发布后前台可见'),
+            default => $entry->isScheduled()
+                ? admin_text('scheduled_message', ['time' => $entry->published_at->format('Y-m-d H:i'), 'timezone' => config('app.timezone')])
+                : admin_text('内容已发布，前台可见'),
+        };
+
+        return redirect()->route('admin.entries.edit', $entry)
+            ->with('status', $message)
+            ->with('entry_saved', true)
+            ->with('entry_created', $created)
+            ->with('entry_saved_draft_id', $request->input('draft_id'))
+            ->with('entry_recovered_draft_id', $request->input('recovered_draft_id'))
+            ->with('entry_preview_url', $request->input('submit_action') === 'preview'
+                ? route('admin.entries.preview.show', ['entry' => $entry, 'locale' => $request->input('preview_locale', Locale::default())]) : null);
+    }
+
+    public function preview(Entry $entry, Request $request): View|RedirectResponse
+    {
+        abort_if($this->entryService->assertAccess($entry), 403);
+        $locale = $request->query('locale', Locale::default());
+        abort_unless(is_string($locale) && in_array($locale, Locale::codes(), true), 404);
+        if (! $entry->previewIsValid()) {
+            return redirect()->route('admin.entries.edit', $entry)->with('error', admin_text('预览链接已失效，请保存内容后重新预览'));
+        }
+        $url = $entry->previewUrl();
+        if ($locale !== Locale::default() || ! Locale::hideDefault()) {
+            $url = '/'.Locale::toPublic($locale).'/preview/'.$entry->preview_token;
+        }
+
+        return view('admin.entries.preview', compact('entry', 'locale', 'url'));
     }
 
     /** 刷新草稿预览链接 */
@@ -170,7 +242,7 @@ class EntryController extends Controller
             'move' => $this->entryService->batchMove($ids, (int) $request->input('category_id')),
             'copy' => $this->entryService->batchCopy($ids, $request->filled('category_id') ? (int) $request->input('category_id') : null),
             'push' => $this->entryService->batchPush($ids, (int) $request->input('recommend_id')),
-            default => ['ok' => false, 'msg' => '未知操作'],
+            default => ['ok' => false, 'msg' => admin_text('未知操作')],
         };
 
         return redirect()->route('admin.entries.index', $this->listQuery($request))

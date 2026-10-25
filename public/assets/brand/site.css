@@ -43,7 +43,7 @@ button { font: inherit; }
 }
 .nav { display: flex; gap: 14px; margin-left: auto; }
 .news-list { display: grid; gap: 14px; }
-.news-body a { color: var(--green-2); }
+.news-body a:not(.btn) { color: var(--green-2); }
 .news-body pre { margin: 12px 0; }
 .lang { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .lang a.is-on { color: var(--ink); font-weight: 720; }

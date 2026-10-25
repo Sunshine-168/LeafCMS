@@ -1,7 +1,7 @@
 @php
     $urls = $urls ?? [];
 @endphp
-<p class="muted">前台只用 <code>@@cms*</code>。循环类标签要成对写结束指令。循环变量默认 <code>$item</code>，嵌套时必须用 <code>'as' =&gt; '别名'</code>。换哪套外观见「<a href="{{ $urls['helpThemes'] ?? '#' }}">主题</a>」，文件放哪见「<a href="{{ $urls['theme'] ?? '#' }}">模板</a>」。</p>
+<p class="muted">前台我只留了一套标签：<code>@@cms*</code>。循环要成对写结束指令。循环变量默认 <code>$item</code>，嵌套时必须用 <code>'as' =&gt; '别名'</code>，否则两层会抢同一个名字。换哪套外观见「<a href="{{ $urls['helpThemes'] ?? '#' }}">主题</a>」，文件放哪见「<a href="{{ $urls['theme'] ?? '#' }}">模板</a>」。</p>
 
 <h3>常用例子</h3>
 <div class="code">

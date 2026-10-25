@@ -6,28 +6,28 @@
     $ttl = (int) ($ttl ?? 3600);
     $ttlOptions = $ttlOptions ?? \App\Services\Cms\HtmlCacheService::ttlOptions();
     $lastBust = $lastBust ?? null;
-    $lastBustLabel = $lastBustLabel ?? '还没有刷新过';
+    $lastBustLabel = $lastBustLabel ?? admin_text('还没有刷新过');
     $diskEnabled = (bool) ($diskEnabled ?? false);
     $diskCount = (int) ($diskCount ?? 0);
     $diskJob = $diskJob ?? ['status' => 'idle', 'percent' => 0, 'message' => ''];
 @endphp
 @section('header_actions')
-    <form method="post" action="{{ route('admin.cache.clear') }}" onsubmit="return confirm('会清掉模板、配置和已存页面。第一次打开会稍慢，随后再生成。确定？')">
+    <form method="post" action="{{ route('admin.cache.clear') }}" onsubmit="return confirm(@js(admin_text('会清掉模板、配置和已存页面。第一次打开会稍慢，随后再生成。确定？')))">
         @csrf
-        <button class="btn btn-muted btn-sm" type="submit">清空缓存</button>
+        <button class="btn btn-muted btn-sm" type="submit">{{ admin_text('清空缓存') }}</button>
     </form>
 @endsection
 @section('content')
     <div class="html-cache-page">
-        <p class="muted recycle-lead">全页缓存会把首页、栏目和文章先做好存起来，访客打开更快。后台、会员中心、搜索和下载不会存。改内容后会自动换新的。模板和配置缓存用右上角「清空缓存」。</p>
+        <p class="muted recycle-lead">{{ admin_text('全页缓存会把首页、栏目和文章先做好存起来，访客打开更快。后台、会员中心、搜索和下载不会存。改内容后会自动换新的。模板和配置缓存用右上角「清空缓存」。') }}</p>
 
         <div class="html-cache-card">
             <div class="html-cache-status">
-                <h3>页面缓存</h3>
+                <h3>{{ admin_text('页面缓存') }}</h3>
                 @if($enabled)
-                    <span class="badge badge-ok">已开启</span>
+                    <span class="badge badge-ok">{{ admin_text('已开启') }}</span>
                 @else
-                    <span class="badge badge-off">未开启</span>
+                    <span class="badge badge-off">{{ admin_text('未开启') }}</span>
                 @endif
             </div>
             <form method="post" action="{{ route('admin.html-cache.update') }}">
@@ -36,26 +36,26 @@
                 <label class="inline">
                     <input type="hidden" name="html_cache_enabled" value="0">
                     <input type="checkbox" name="html_cache_enabled" value="1" @checked($enabled)>
-                    启用，访客看到的是刚生成好的页面
+                    {{ admin_text('启用，访客看到的是刚生成好的页面') }}
                 </label>
-                <p class="muted field-hint">适合访问多、改动不那么频繁的站点。刚发布的改动最多等你选的时长就会出现。</p>
+                <p class="muted field-hint">{{ admin_text('适合访问多、改动不那么频繁的站点。刚发布的改动最多等你选的时长就会出现。') }}</p>
 
-                <label for="html-cache-ttl">保存多久</label>
+                <label for="html-cache-ttl">{{ admin_text('保存多久') }}</label>
                 <select id="html-cache-ttl" class="html-cache-ttl" name="html_cache_ttl">
                     @foreach($ttlOptions as $seconds => $label)
                         <option value="{{ $seconds }}" @selected($ttl === (int) $seconds)>{{ $label }}</option>
                     @endforeach
                 </select>
-                <p class="muted field-hint">选「马上换新」时，改完内容前台就会用新页面；选一段时间则期间都用存好的。</p>
+                <p class="muted field-hint">{{ admin_text('选「马上换新」时，改完内容前台就会用新页面；选一段时间则期间都用存好的。') }}</p>
 
                 <div class="form-actions">
-                    <button class="btn" type="submit">保存设置</button>
+                    <button class="btn" type="submit">{{ admin_text('保存设置') }}</button>
                 </div>
             </form>
         </div>
 
         <div class="html-cache-card">
-            <h3>现在</h3>
+            <h3>{{ admin_text('现在') }}</h3>
             <p class="muted" style="margin:0 0 8px">
                 {{ $lastBustLabel }}
                 @if(!empty($lastBust['at']))
@@ -66,61 +66,63 @@
                 <form method="post" action="{{ route('admin.html-cache.warm') }}">
                     @csrf
                     <input type="hidden" name="entries" value="30">
-                    <button class="btn" type="submit" @disabled(! $enabled)>预热常用页</button>
+                    <button class="btn" type="submit" @disabled(! $enabled)>{{ admin_text('预热常用页') }}</button>
                 </form>
-                <form method="post" action="{{ route('admin.html-cache.clear') }}" onsubmit="return confirm('清空后访客第一次打开会稍慢，随后又会存起来。确定？')">
+                <form method="post" action="{{ route('admin.html-cache.clear') }}" onsubmit="return confirm(@js(admin_text('清空后访客第一次打开会稍慢，随后又会存起来。确定？')))">
                     @csrf
-                    <button class="btn btn-muted" type="submit">清空已存页面</button>
+                    <button class="btn btn-muted" type="submit">{{ admin_text('清空已存页面') }}</button>
                 </form>
             </div>
             <p class="muted field-hint">
                 @if($enabled)
-                    预热会现在生成首页、栏目和最近 30 篇文章，避免刚打开时前台还要现算。
+                    {{ admin_text('预热会现在生成首页、栏目和最近 30 篇文章，避免刚打开时前台还要现算。') }}
                 @else
-                    打开并保存后，才能预热。
+                    {{ admin_text('打开并保存后，才能预热。') }}
                 @endif
             </p>
         </div>
 
         <div class="html-cache-card" id="diskHtmlCard">
             <div class="html-cache-status">
-                <h3>磁盘静态页</h3>
+                <h3>{{ admin_text('磁盘静态页') }}</h3>
                 @if($diskEnabled)
-                    <span class="badge badge-ok">已打开</span>
+                    <span class="badge badge-ok">{{ admin_text('已打开') }}</span>
                 @else
-                    <span class="badge badge-off">未打开</span>
+                    <span class="badge badge-off">{{ admin_text('未打开') }}</span>
                 @endif
             </div>
-            <p class="muted field-hint">把栏目和文章写成文件。生成后前台会直接用这些文件，不必再渲染模板。本机开发也会读。nginx 怎么配见系统「<a href="{{ route('admin.help') }}">说明</a>」。</p>
+            <p class="muted field-hint">{!! admin_text('把栏目和文章写成文件。生成后前台会直接用这些文件，不必再渲染模板。本机开发也会读。nginx 怎么配见系统「:help」。', [
+                'help' => '<a href="'.e(route('admin.help')).'">'.e(admin_t('nav.help')).'</a>',
+            ]) !!}</p>
             <form method="post" action="{{ route('admin.html-cache.disk-update') }}">
                 @csrf
                 @method('PUT')
                 <label class="inline">
                     <input type="hidden" name="disk_html_enabled" value="0">
                     <input type="checkbox" name="disk_html_enabled" value="1" @checked($diskEnabled)>
-                    启用，允许在后台生成静态文件
+                    {{ admin_text('启用，允许在后台生成静态文件') }}
                 </label>
                 <div class="form-actions">
-                    <button class="btn btn-muted" type="submit">保存这项</button>
+                    <button class="btn btn-muted" type="submit">{{ admin_text('保存这项') }}</button>
                 </div>
             </form>
             <p id="diskHtmlCount" class="muted">
                 @if($diskCount > 0)
-                    目前有 {{ $diskCount }} 个文件。
+                    {{ admin_text('目前有 :count 个文件。', ['count' => $diskCount]) }}
                 @else
-                    还没有生成过文件。
+                    {{ admin_text('还没有生成过文件。') }}
                 @endif
             </p>
             <div class="html-cache-actions">
-                <button class="btn" type="button" id="diskBuildBtn" data-off="{{ $diskEnabled ? '0' : '1' }}" @disabled(! $diskEnabled)>开始生成</button>
-                <button class="btn-quiet" type="button" id="diskCancelBtn" hidden>停止</button>
-                <button class="btn-quiet" type="button" id="diskClearBtn">删掉静态文件</button>
+                <button class="btn" type="button" id="diskBuildBtn" data-off="{{ $diskEnabled ? '0' : '1' }}" @disabled(! $diskEnabled)>{{ admin_text('开始生成') }}</button>
+                <button class="btn-quiet" type="button" id="diskCancelBtn" hidden>{{ admin_text('停止') }}</button>
+                <button class="btn-quiet" type="button" id="diskClearBtn">{{ admin_text('删掉静态文件') }}</button>
             </div>
             <p class="muted field-hint">
                 @if($diskEnabled)
-                    会生成首页、栏目和已发布的文章。页面多时会分批写，文件多时会分批删。进行中请不要关掉这个页面。
+                    {{ admin_text('会生成首页、栏目和已发布的文章。页面多时会分批写，文件多时会分批删。进行中请不要关掉这个页面。') }}
                 @else
-                    打开并保存后，才能生成。已有文件仍可分批删除。
+                    {{ admin_text('打开并保存后，才能生成。已有文件仍可分批删除。') }}
                 @endif
             </p>
             <div class="disk-html-progress{{ in_array($diskJob['status'] ?? '', ['done', 'cancelled'], true) ? ' is-done' : '' }}"
@@ -153,6 +155,25 @@
         step: @json(route('admin.html-cache.disk-step')),
         cancel: @json(route('admin.html-cache.disk-cancel'))
     };
+    var copy = {
+        deleted: @json(admin_text('已删 :done / :total')),
+        written: @json(admin_text('已写 :done / :total')),
+        files: @json(admin_text('目前有 :count 个文件。')),
+        noFiles: @json(admin_text('还没有生成过文件。')),
+        failed: @json(admin_text('请求失败')),
+        interrupted: @json(admin_text('处理中断了')),
+        listingWrite: @json(admin_text('正在列出要写的页面…')),
+        couldNotStart: @json(admin_text('没能开始')),
+        confirmClear: @json(admin_text('删掉这些文件后，前台改回动态生成。文件多时会分批删。确定？')),
+        listingDelete: @json(admin_text('正在列出要删的文件…')),
+        couldNotDelete: @json(admin_text('没能开始删除')),
+        couldNotStop: @json(admin_text('没能停止'))
+    };
+    function fill(template, map) {
+        return String(template).replace(/:([a-z]+)/g, function (_, key) {
+            return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : ':' + key;
+        });
+    }
     var looping = false;
     var stepChunk = 6;
     function locked() {
@@ -179,15 +200,15 @@
         bar.style.width = (data.percent || 0) + '%';
         var kind = data.kind || 'build';
         var fallback = kind === 'clear'
-            ? ('已删 ' + (data.done || 0) + ' / ' + (data.total || 0))
-            : ('已写 ' + (data.done || 0) + ' / ' + (data.total || 0));
+            ? fill(copy.deleted, { done: data.done || 0, total: data.total || 0 })
+            : fill(copy.written, { done: data.done || 0, total: data.total || 0 });
         msg.textContent = data.message || fallback;
         box.classList.toggle('is-done', data.status === 'done');
         box.classList.toggle('is-stop', data.status === 'cancelled' || data.status === 'error');
         if (count && typeof data.file_count === 'number') {
             count.textContent = data.file_count > 0
-                ? ('目前有 ' + data.file_count + ' 个文件。')
-                : '还没有生成过文件。';
+                ? fill(copy.files, { count: data.file_count })
+                : copy.noFiles;
         }
         var busy = data.status === 'running';
         btn.disabled = busy || locked();
@@ -201,7 +222,7 @@
         var res = await fetch(url, { method: 'POST', headers: headers(), body: JSON.stringify(body || {}) });
         var data = await res.json().catch(function () { return {}; });
         if (!res.ok) {
-            throw new Error(data.message || '请求失败');
+            throw new Error(data.message || copy.failed);
         }
         return data;
     }
@@ -216,7 +237,7 @@
                 if (data.status !== 'running') break;
             }
         } catch (e) {
-            paint({ status: 'error', percent: 0, message: e.message || '处理中断了', done: 0, total: 0 });
+            paint({ status: 'error', percent: 0, message: e.message || copy.interrupted, done: 0, total: 0 });
         }
         looping = false;
         idleButtons();
@@ -226,7 +247,7 @@
         btn.disabled = true;
         if (clearBtn) clearBtn.disabled = true;
         box.hidden = false;
-        msg.textContent = '正在列出要写的页面…';
+        msg.textContent = copy.listingWrite;
         bar.style.width = '0%';
         box.classList.remove('is-done', 'is-stop');
         try {
@@ -235,17 +256,17 @@
             if (data.status === 'running') await loop(6);
             else idleButtons();
         } catch (e) {
-            paint({ status: 'error', percent: 0, message: e.message || '没能开始', done: 0, total: 0 });
+            paint({ status: 'error', percent: 0, message: e.message || copy.couldNotStart, done: 0, total: 0 });
             idleButtons();
         }
     });
 
     clearBtn?.addEventListener('click', async function () {
-        if (!confirm('删掉这些文件后，前台改回动态生成。文件多时会分批删。确定？')) return;
+        if (!confirm(copy.confirmClear)) return;
         btn.disabled = true;
         clearBtn.disabled = true;
         box.hidden = false;
-        msg.textContent = '正在列出要删的文件…';
+        msg.textContent = copy.listingDelete;
         bar.style.width = '0%';
         box.classList.remove('is-done', 'is-stop');
         try {
@@ -254,7 +275,7 @@
             if (data.status === 'running') await loop(40);
             else idleButtons();
         } catch (e) {
-            paint({ status: 'error', percent: 0, message: e.message || '没能开始删除', done: 0, total: 0 });
+            paint({ status: 'error', percent: 0, message: e.message || copy.couldNotDelete, done: 0, total: 0 });
             idleButtons();
         }
     });
@@ -264,7 +285,7 @@
         try {
             paint(await post(urls.cancel, {}));
         } catch (e) {
-            msg.textContent = e.message || '没能停止';
+            msg.textContent = e.message || copy.couldNotStop;
         }
         idleButtons();
     });

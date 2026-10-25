@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Cms\Entry;
 use App\Support\Cdn;
+use App\Support\SqlLike;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,8 +34,8 @@ class ContentApiController extends ApiController
         if ($request->filled('q')) {
             $kw = trim((string) $request->query('q'));
             $q->where(function ($w) use ($kw) {
-                $w->where('search_text', 'like', "%{$kw}%")
-                    ->orWhere('title', 'like', "%{$kw}%");
+                SqlLike::whereContains($w, 'search_text', $kw);
+                SqlLike::whereContains($w, 'title', $kw, 'or');
             });
         }
 
@@ -86,8 +87,8 @@ class ContentApiController extends ApiController
         }
         $kw = trim((string) $request->query('q'));
         $q->where(function ($w) use ($kw) {
-            $w->where('search_text', 'like', "%{$kw}%")
-                ->orWhere('title', 'like', "%{$kw}%");
+            SqlLike::whereContains($w, 'search_text', $kw);
+            SqlLike::whereContains($w, 'title', $kw, 'or');
         });
 
         $page = $q->paginate($limit);

@@ -65,9 +65,12 @@ class SiteBackupService
             return Result::fail('这台服务器还不能打包备份，请联系运维');
         }
 
-        $stamp = now()->format('Ymd-His');
-        $filename = 'cms-backup-'.$stamp.'.zip';
-        $zipPath = $this->directory().DIRECTORY_SEPARATOR.$filename;
+        $offset = 0;
+        do {
+            $stamp = now()->addSeconds($offset++)->format('Ymd-His');
+            $filename = 'cms-backup-'.$stamp.'.zip';
+            $zipPath = $this->directory().DIRECTORY_SEPARATOR.$filename;
+        } while (is_file($zipPath));
 
         $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
@@ -132,6 +135,11 @@ class SiteBackupService
             if (! is_file($sqlFile)) {
                 return Result::fail('备份内没有 database.sql');
             }
+            // 先解开目标备份，再建恢复点；保留策略不会影响已解开的目标。
+            $restorePoint = $this->create();
+            if (! $restorePoint['ok']) {
+                return Result::fail('未能建立恢复前备份，已停止还原：'.$restorePoint['msg']);
+            }
             $this->importSql((string) file_get_contents($sqlFile));
             $this->restoreUploads($tmp.DIRECTORY_SEPARATOR.'uploads');
             Setting::forgetCacheForSite();
@@ -142,7 +150,7 @@ class SiteBackupService
             File::deleteDirectory($tmp);
         }
 
-        return Result::ok(null, '备份已还原，请刷新页面');
+        return Result::ok(null, '备份已还原。恢复前备份：'.$restorePoint['data']['file'].'，请刷新页面');
     }
 
     protected function restoreUploads(string $dir): void
